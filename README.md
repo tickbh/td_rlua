@@ -179,6 +179,58 @@ impl<'a> td_rlua::LuaPush for &'a mut  Foo {
     }
 }
 ```
+
+custom lua call userdata need impl NewStruct
+```
+#[derive(Clone, Debug)]
+struct TestLuaSturct {
+    index : i32,
+}
+
+impl NewStruct for TestLuaSturct {
+    fn new() -> TestLuaSturct {
+        println!("new !!!!!!!!!!!!!!");
+        TestLuaSturct {
+            index : 19,
+        }
+    }
+
+    fn name() -> &'static str {
+        "TestLuaSturct"
+    }
+}
+
+impl<'a> LuaRead for &'a mut TestLuaSturct {
+    fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<&'a mut TestLuaSturct> {
+        td_rlua::userdata::read_userdata(lua, index)
+    }
+}
+``` rust
+
+now we can custom function
+
+```
+let mut lua = Lua::new();
+lua.openlibs();
+fn one_arg(obj : &mut TestLuaSturct) -> i32 { obj.index = 10; 5 };
+fn two_arg(obj : &mut TestLuaSturct, index : i32) { obj.index = index;};
+
+let mut value = td_rlua::LuaStruct::<TestLuaSturct>::new(lua.state());
+value.create().def("one_arg", td_rlua::function1(one_arg)).def("two_arg", td_rlua::function2(two_arg));
+
+let _ : Option<()> = lua.exec_string("x = TestLuaSturct()");
+let val : Option<i32> = lua.exec_string("return x:one_arg()");
+assert_eq!(val, Some(5));
+let obj : Option<&mut TestLuaSturct> = lua.query("x");
+assert_eq!(obj.unwrap().index, 10);
+let val : Option<i32> = lua.exec_string("x:two_arg(121)");
+assert_eq!(val, None);
+let obj : Option<&mut TestLuaSturct> = lua.query("x");
+assert_eq!(obj.unwrap().index, 121);
+
+let obj : Option<&mut TestLuaSturct> = lua.exec_string("return TestLuaSturct()");
+assert_eq!(obj.unwrap().index, 19);
+```
 ### Contributing
 
 Contributions are welcome!
