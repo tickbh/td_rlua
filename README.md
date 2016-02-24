@@ -181,7 +181,7 @@ impl<'a> td_rlua::LuaPush for &'a mut  Foo {
 ```
 
 custom lua call userdata need impl NewStruct
-```
+```rust
 #[derive(Clone, Debug)]
 struct TestLuaSturct {
     index : i32,
@@ -205,11 +205,11 @@ impl<'a> LuaRead for &'a mut TestLuaSturct {
         td_rlua::userdata::read_userdata(lua, index)
     }
 }
-``` rust
+```
 
 now we can custom function
 
-```
+```rust
 let mut lua = Lua::new();
 lua.openlibs();
 fn one_arg(obj : &mut TestLuaSturct) -> i32 { obj.index = 10; 5 };
