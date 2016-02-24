@@ -1,0 +1,12 @@
+[package]
+name = "td_rlua"
+version = "0.1.0"
+authors = ["wgd <wgd@qq.com>"]
+
+[dependencies]
+libc = "*"
+
+[dependencies.c_lua]
+version = "*"
+path = "../c_lua"
+

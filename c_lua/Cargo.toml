@@ -1,0 +1,15 @@
+[package]
+name = "c_lua"
+version = "0.0.4"
+authors = ["Pierre Krieger <pierre.krieger1708@gmail.com>"]
+description = "Bindings for Lua 5.2"
+build = "build.rs"
+links = "lua"
+license = "MIT"
+
+[build-dependencies]
+pkg-config = "0.3"
+gcc = "0.3"
+
+[dependencies]
+libc = "*"
