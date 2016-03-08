@@ -111,8 +111,9 @@ impl LuaRead for bool {
 }
 
 impl LuaPush for () {
-    fn push_to_lua(self, _: *mut lua_State) -> i32 {
-        0
+    fn push_to_lua(self, lua: *mut lua_State) -> i32 {
+        unsafe { c_lua::lua_pushnil(lua) };
+        1
     }
 }
 

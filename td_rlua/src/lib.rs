@@ -3,7 +3,7 @@ extern crate libc;
 
 use std::borrow::Borrow;
 use std::ffi::{CStr, CString};
-use c_lua::lua_State;
+pub use c_lua::lua_State;
 
 pub mod values;
 pub mod lua_tables;
