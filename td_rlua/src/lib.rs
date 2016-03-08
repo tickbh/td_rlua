@@ -21,6 +21,36 @@ pub struct Lua {
     own: bool,
 }
 
+macro_rules! impl_exec_func {
+    ($name:ident, $($p:ident),*) => (
+        #[allow(non_snake_case)]
+        pub fn $name<Z, $($p),*>(&mut self, func_name : Z, $($p : $p, )*) -> i32 where Z: Borrow<str>, $($p : LuaPush),* {
+            let func_name = CString::new(func_name.borrow()).unwrap();
+            unsafe {
+                let state = self.state();
+                let error = CString::new("error_handle").unwrap();
+                c_lua::lua_getglobal(state, error.as_ptr());
+                c_lua::lua_getglobal(state, func_name.as_ptr());
+
+                let mut index = 0;
+
+                $(
+                    $p.push_to_lua(self.state());
+                    index += 1;
+                )*
+
+                let success = c_lua::lua_pcall(state, index, 0, -1 * index - 2);
+                if success != 0 {
+                    c_lua::lua_pop(state, 1);
+                }
+                success
+                // 
+                // LuaRead::lua_read(state)
+            }
+        }
+    )
+}
+
 // TODO add lua require load func
 
 impl Lua {
@@ -130,12 +160,11 @@ impl Lua {
             c_lua::lua_getglobal(state, error.as_ptr());
             c_lua::luaL_loadstring(state, index.as_ptr());
             let success = c_lua::lua_pcall(state, 0, 1, -2);
-            let ret : Option<R> = LuaRead::lua_read(state);
             if success != 0 {
                 c_lua::lua_pop(state, 1);
                 return None;
             }
-            ret
+            LuaRead::lua_read(state)
         }
     }
 
@@ -172,6 +201,20 @@ impl Lua {
         }
         0
     }
+
+
+
+    impl_exec_func!(exec_func0, );
+    impl_exec_func!(exec_func1, A);
+    impl_exec_func!(exec_func2, A, B);
+    impl_exec_func!(exec_func3, A, B, C);
+    impl_exec_func!(exec_func4, A, B, C, D);
+    impl_exec_func!(exec_func5, A, B, C, D, E);
+    impl_exec_func!(exec_func6, A, B, C, D, E, F);
+    impl_exec_func!(exec_func7, A, B, C, D, E, F, G);
+    impl_exec_func!(exec_func8, A, B, C, D, E, F, G, H);
+    impl_exec_func!(exec_func9, A, B, C, D, E, F, G, H, I);
+    impl_exec_func!(exec_func10, A, B, C, D, E, F, G, H, I, J);
 
 }
 
