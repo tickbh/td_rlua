@@ -3,7 +3,6 @@ extern crate libc;
 
 use std::borrow::Borrow;
 use std::ffi::{CStr, CString};
-pub use c_lua::lua_State;
 
 pub mod values;
 pub mod lua_tables;
@@ -12,6 +11,7 @@ pub mod userdata;
 pub mod tuples;
 pub mod rust_tables;
 
+pub use c_lua::*;
 pub use functions::{function0, function1, function2, function3, function4, function5, function6, function7, function8, function9, function10, Function};
 pub use userdata::{push_userdata, push_lightuserdata, read_userdata, LuaStruct, NewStruct};
 pub use lua_tables::LuaTable;

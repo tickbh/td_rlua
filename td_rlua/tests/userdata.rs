@@ -1,6 +1,6 @@
 extern crate td_rlua;
-extern crate c_lua;
 
+use td_rlua::lua_State;
 use td_rlua::Lua;
 use td_rlua::LuaPush;
 use td_rlua::LuaRead;
@@ -11,12 +11,12 @@ fn readwrite() {
     #[derive(Clone)]
     struct Foo;
     impl<'a> LuaPush for &'a mut  Foo {
-        fn push_to_lua(self, lua: *mut c_lua::lua_State) -> i32 {
+        fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
     impl<'a> LuaRead for &'a mut Foo {
-        fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<&'a mut Foo> {
+        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -45,7 +45,7 @@ fn destructor_called() {
     }
 
     impl<'a> LuaPush for &'a mut Foo {
-        fn push_to_lua(self, lua: *mut c_lua::lua_State) -> i32 {
+        fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
@@ -64,12 +64,12 @@ fn type_check() {
     #[derive(Clone)]
     struct Foo;
     impl<'a> LuaPush for &'a mut Foo {
-        fn push_to_lua(self, lua: *mut c_lua::lua_State) -> i32 {
+        fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
     impl<'a> LuaRead for &'a mut Foo {
-        fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<&'a mut Foo> {
+        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -77,12 +77,12 @@ fn type_check() {
     #[derive(Clone)]
     struct Bar;
     impl<'a> LuaPush for &'a mut Bar {
-        fn push_to_lua(self, lua: *mut c_lua::lua_State) -> i32 {
+        fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
     impl<'a> LuaRead for &'a mut Bar {
-        fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<&'a mut Bar> {
+        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut Bar> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -100,7 +100,7 @@ fn metatables() {
     #[derive(Clone)]
     struct Foo;
     impl<'a> LuaPush for &'a mut Foo {
-        fn push_to_lua(self, lua: *mut c_lua::lua_State) -> i32 {
+        fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |mut table| {
                 table.set("__index".to_string(), vec![
                     // ("test".to_string(), td_rlua::function0(|| 5)),
@@ -128,12 +128,12 @@ fn get_set_test() {
     };
 
     impl<'a> td_rlua::LuaPush for &'a mut  Foo {
-        fn push_to_lua(self, lua: *mut c_lua::lua_State) -> i32 {
+        fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
     impl<'a> td_rlua::LuaRead for &'a mut  Foo {
-        fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<&'a mut Foo> {
+        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -179,7 +179,7 @@ fn custom_struct() {
     }
 
     impl<'a> LuaRead for &'a mut TestLuaSturct {
-        fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<&'a mut TestLuaSturct> {
+        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut TestLuaSturct> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
