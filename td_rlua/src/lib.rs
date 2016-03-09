@@ -35,8 +35,7 @@ macro_rules! impl_exec_func {
                 let mut index = 0;
 
                 $(
-                    $p.push_to_lua(self.state());
-                    index += 1;
+                    index += $p.push_to_lua(self.state());
                 )*
 
                 let success = c_lua::lua_pcall(state, index, 0, -1 * index - 2);

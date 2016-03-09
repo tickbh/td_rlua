@@ -3,6 +3,8 @@ use c_lua::lua_State;
 
 use LuaPush;
 
+use libc;
+
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
