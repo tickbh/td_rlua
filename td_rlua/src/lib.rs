@@ -3,6 +3,8 @@ extern crate libc;
 
 use std::borrow::Borrow;
 use std::ffi::{CStr, CString};
+use std::io::prelude::*;
+use std::fs::File;
 
 pub mod values;
 pub mod lua_tables;
@@ -19,6 +21,15 @@ pub use lua_tables::LuaTable;
 pub struct Lua {
     lua: *mut lua_State,
     own: bool,
+}
+
+macro_rules! unwrap_or {
+    ($expr:expr, $or:expr) => (
+        match $expr {
+            Some(x) => x,
+            None => { $or }
+        }
+    )
 }
 
 macro_rules! impl_exec_func {
@@ -201,7 +212,26 @@ impl Lua {
         0
     }
 
+    pub fn load_file(&mut self, file_name: &str) -> i32 {
+        let mut f = unwrap_or!(File::open(file_name).ok(), return 0);
+        let mut buffer = Vec::new();
+        let _ = unwrap_or!(f.read_to_end(&mut buffer).ok(), return 0);
+        let mut name = file_name.to_string();
+        let mut short_name = name.clone();
+        let len = name.len();
+        if len > 30 {
+            short_name = name.drain((len - 30)..).collect();
+        }
 
+        let short_name = CString::new(short_name).unwrap();
+        let ret = unsafe { c_lua::luaL_loadbuffer(self.state(), buffer.as_ptr() as *const i8, buffer.len(), short_name.as_ptr()) };
+        if ret != 0 {
+            let err_msg : String = unwrap_or!(LuaRead::lua_read(self.state()), return 0);
+            let err_detail = CString::new(format!("error loading from file {} :\n\t{}", file_name, err_msg)).unwrap();
+            unsafe { c_lua::luaL_error(self.state(), err_detail.as_ptr()); }
+        }
+        1
+    }
 
     impl_exec_func!(exec_func0, );
     impl_exec_func!(exec_func1, A);

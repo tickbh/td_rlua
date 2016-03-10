@@ -225,7 +225,8 @@ extern "C" {
     pub fn luaL_newstate() -> *mut lua_State;
     pub fn luaL_loadstring(L: *mut lua_State, p: *const libc::c_char) -> c_int;
     pub fn luaL_setmetatable(L: *mut lua_State, tname: *const libc::c_char);
-    pub fn luaL_newmetatable(L: *mut lua_State, tname: *const libc::c_char);
+    pub fn luaL_error(L: *mut lua_State, info: *const libc::c_char);
+    pub fn luaL_loadbufferx(L: *mut lua_State, buff: *const libc::c_char, sz : libc::size_t, name : *const libc::c_char, mode : *const libc::c_char) -> c_int;
     
 }
 #[inline(always)]
@@ -328,6 +329,10 @@ pub unsafe fn lua_remove(L: *mut lua_State, idx: c_int) {
 
 pub unsafe fn lua_insert(L: *mut lua_State, idx: c_int) {
     lua_rotate(L, idx, 1);
+}
+
+pub unsafe fn luaL_loadbuffer(L: *mut lua_State, buff: *const libc::c_char, sz : libc::size_t, name : *const libc::c_char)  -> c_int{
+    luaL_loadbufferx(L, buff, sz, name, ptr::null_mut())
 }
 
 impl default::Default for lua_Debug {
