@@ -6,6 +6,15 @@ use std::ffi::{CStr, CString};
 use std::io::prelude::*;
 use std::fs::File;
 
+macro_rules! unwrap_or {
+    ($expr:expr, $or:expr) => (
+        match $expr {
+            Some(x) => x,
+            None => { $or }
+        }
+    )
+}
+
 pub mod values;
 pub mod lua_tables;
 pub mod functions;
@@ -21,15 +30,6 @@ pub use lua_tables::LuaTable;
 pub struct Lua {
     lua: *mut lua_State,
     own: bool,
-}
-
-macro_rules! unwrap_or {
-    ($expr:expr, $or:expr) => (
-        match $expr {
-            Some(x) => x,
-            None => { $or }
-        }
-    )
 }
 
 macro_rules! impl_exec_func {
@@ -54,14 +54,10 @@ macro_rules! impl_exec_func {
                     c_lua::lua_pop(state, 1);
                 }
                 success
-                // 
-                // LuaRead::lua_read(state)
             }
         }
     )
 }
-
-// TODO add lua require load func
 
 impl Lua {
     /// Builds a new Lua context.

@@ -36,6 +36,7 @@ integer_impl!(i32);
 integer_impl!(u8);
 integer_impl!(u16);
 integer_impl!(u32);
+integer_impl!(usize);
 
 macro_rules! numeric_impl(
     ($t:ident) => (

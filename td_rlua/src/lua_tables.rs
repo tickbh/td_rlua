@@ -97,6 +97,13 @@ impl LuaTable {
         self.query(index).unwrap()
     }
 
+    pub fn table_len(&mut self) -> usize {
+        self.clear_top();
+        unsafe {
+            c_lua::lua_rawlen(self.table, 1)
+        }
+    }
+
     // /// Obtains or create the metatable of the table.
     pub fn get_or_create_metatable(&mut self) -> LuaTable {
         self.clear_top();
