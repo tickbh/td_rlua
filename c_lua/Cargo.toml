@@ -1,8 +1,8 @@
 [package]
 name = "c_lua"
 version = "0.0.4"
-authors = ["Pierre Krieger <pierre.krieger1708@gmail.com>"]
-description = "Bindings for Lua 5.2"
+authors = ["wugd"]
+description = "Bindings for Lua 5.3"
 build = "build.rs"
 links = "lua"
 license = "MIT"
