@@ -272,4 +272,27 @@ impl<T> LuaStruct<T> where T: NewStruct + Any {
         self
     }
 
+
+    pub fn register(&mut self, name : &str, func : extern "C" fn(*mut c_lua::lua_State) -> libc::c_int) -> &mut LuaStruct<T>
+    {
+        let tname = T::name();
+        let mut lua = Lua::from_existing_state(self.lua, false);
+        match lua.query::<LuaTable, _>(tname.clone()) {
+            Some(mut table) => {
+                match table.query::<LuaTable, _>("__index") {
+                    Some(mut index) => {
+                        index.register(name, func);
+                    },
+                    None => {
+                        let mut index = table.empty_table("__index");
+                        index.register(name, func);
+                    }
+                };
+            },
+            None => ()
+        };
+        self
+    }
+
+
 }

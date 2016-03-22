@@ -42,6 +42,7 @@ fn main() {
         .file("lua/src/linit.c")
         .file("lua/src/lutf8lib.c")
         .define("LUA_COMPAT_ALL", None)
+        .define("LUA_COMPAT_MODULE", Some("true"))
         .include("lua/src")
         .compile("liblua.a");
 }

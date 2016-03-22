@@ -1,9 +1,10 @@
-use c_lua;
-use c_lua::lua_State;
+use std::marker::PhantomData;
 
+use libc;
+
+use c_lua::{self, lua_State};
 use LuaPush;
 use LuaRead;
-use std::marker::PhantomData;
 /// Represents a table stored in the Lua context.
 ///
 /// Loading this type mutably borrows the Lua context.
@@ -83,6 +84,19 @@ impl LuaTable {
         value.push_to_lua(self.table);
         unsafe { c_lua::lua_settable(self.table, -3); }
     }
+
+    /// Inserts or modifies an elements of the table.
+    pub fn register<I>(&mut self, index: I, func : extern "C" fn(*mut lua_State) -> libc::c_int)
+                         where I: LuaPush
+    {
+        self.clear_top();
+        index.push_to_lua(self.table);
+        unsafe {
+            c_lua::lua_pushcfunction(self.table, func);
+            c_lua::lua_settable(self.table, -3);
+        }
+    }
+
 
     // /// Inserts an empty table, then loads it.
     pub fn empty_table<I>(&mut self, index: I) -> LuaTable
