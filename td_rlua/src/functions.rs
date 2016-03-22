@@ -138,7 +138,7 @@ extern fn wrapper<T, P, R>(lua: *mut c_lua::lua_State) -> libc::c_int
     let args = match LuaRead::lua_read_at_position(lua, -arguments_count as libc::c_int) {      // TODO: what if the user has the wrong params?
         Some(a) => a,
         _ => {
-            let err_msg = format!("wrong parameter types for callback function");
+            let err_msg = format!("wrong parameter types for callback function arguments_count is {}", arguments_count);
             err_msg.push_to_lua(lua);
             unsafe { c_lua::lua_error(lua); }
             unreachable!()

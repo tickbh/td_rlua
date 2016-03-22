@@ -11,13 +11,13 @@ use LuaRead;
 pub struct LuaTable {
     table: *mut lua_State,
     top : i32,
+    index : i32,
 }
 
 impl LuaRead for LuaTable {
     fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<LuaTable> {
-        assert!(index == -1);   // FIXME: not sure if it's working
         if unsafe { c_lua::lua_istable(lua, index) } {
-            Some(LuaTable { table: lua, top : 0 })
+            Some(LuaTable { table: lua, top : 0, index : index })
         } else {
             None
         }
@@ -69,7 +69,7 @@ impl LuaTable {
     {
         self.clear_top();
         index.push_to_lua(self.table);
-        unsafe { c_lua::lua_gettable(self.table, -2); }
+        unsafe { c_lua::lua_gettable(self.table, self.index - 1); }
         self.top = 1;
         LuaRead::lua_read(self.table)
     }
@@ -82,7 +82,7 @@ impl LuaTable {
         self.clear_top();
         index.push_to_lua(self.table);
         value.push_to_lua(self.table);
-        unsafe { c_lua::lua_settable(self.table, -3); }
+        unsafe { c_lua::lua_settable(self.table, self.index - 2); }
     }
 
     /// Inserts or modifies an elements of the table.
@@ -93,7 +93,7 @@ impl LuaTable {
         index.push_to_lua(self.table);
         unsafe {
             c_lua::lua_pushcfunction(self.table, func);
-            c_lua::lua_settable(self.table, -3);
+            c_lua::lua_settable(self.table, self.index - 2);
         }
     }
 
@@ -106,7 +106,7 @@ impl LuaTable {
         index.clone().push_to_lua(self.table);
         unsafe { 
             c_lua::lua_newtable(self.table);
-            c_lua::lua_settable(self.table, -3); 
+            c_lua::lua_settable(self.table, self.index - 2); 
         }
         self.query(index).unwrap()
     }
@@ -114,20 +114,20 @@ impl LuaTable {
     pub fn table_len(&mut self) -> usize {
         self.clear_top();
         unsafe {
-            c_lua::lua_rawlen(self.table, 1)
+            c_lua::lua_rawlen(self.table, self.index)
         }
     }
 
     // /// Obtains or create the metatable of the table.
     pub fn get_or_create_metatable(&mut self) -> LuaTable {
         self.clear_top();
-        let result = unsafe { c_lua::lua_getmetatable(self.table, -1) };
+        let result = unsafe { c_lua::lua_getmetatable(self.table, self.index) };
 
         if result == 0 {
             unsafe {
                 c_lua::lua_newtable(self.table);
                 c_lua::lua_setmetatable(self.table, -2);
-                let r = c_lua::lua_getmetatable(self.table, -1);
+                let r = c_lua::lua_getmetatable(self.table, self.index);
                 assert!(r != 0);
             }
         }
@@ -135,6 +135,7 @@ impl LuaTable {
         LuaTable {
             table: self.table,
             top: 0,
+            index : -1,
         }
     }
 }
