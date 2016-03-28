@@ -44,6 +44,8 @@ fn main() {
         .define("LUA_COMPAT_ALL", None)
         .define("LUA_COMPAT_MODULE", None)
         .define("LUA_COMPAT_BITLIB", None)
+        .define("LUA_COMPAT_LOADSTRING", None)
+        
         .include("lua/src")
         .compile("liblua.a");
 }
