@@ -37,6 +37,26 @@ fn constructor_impl<T>(lua: *mut c_lua::lua_State) -> libc::c_int where T : NewS
     let lua_data_raw = unsafe { c_lua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t) };
     let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
     unsafe { ptr::copy_nonoverlapping(t, lua_data, 1) };
+    unsafe { drop(Box::from_raw(t)); }
+
+    let typeid = CString::new(T::name()).unwrap();
+    unsafe {
+        c_lua::lua_getglobal(lua, typeid.as_ptr());
+        c_lua::lua_setmetatable(lua, -2);
+    }
+    1
+}
+
+
+extern fn constructor_light_wrapper(lua: *mut c_lua::lua_State) -> libc::c_int {
+    let impl_raw = unsafe { c_lua::lua_touserdata(lua, c_lua::lua_upvalueindex(1)) };
+    let imp: fn(*mut c_lua::lua_State)->::libc::c_int = unsafe { mem::transmute(impl_raw) };
+    imp(lua)
+}
+
+fn constructor_light_impl<T>(lua: *mut c_lua::lua_State) -> libc::c_int where T : NewStruct + Any {
+    let t = Box::into_raw(Box::new(T::new()));
+    push_lightuserdata(unsafe { &mut *t }, lua, |_| {});
     let typeid = CString::new(T::name()).unwrap();
     unsafe {
         c_lua::lua_getglobal(lua, typeid.as_ptr());
@@ -59,7 +79,7 @@ fn constructor_impl<T>(lua: *mut c_lua::lua_State) -> libc::c_int where T : NewS
 ///
 pub fn push_userdata<'a, T, F>(data: &'a mut T, lua : *mut c_lua::lua_State, mut metatable: F) -> i32
                               where F: FnMut(LuaTable),
-                                    T: Send + 'a + Any
+                                    T: 'a + Any
 {
     let typeid = format!("{:?}", TypeId::of::<T>());
     let lua_data_raw = unsafe { c_lua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t) };
@@ -116,7 +136,7 @@ pub fn push_userdata<'a, T, F>(data: &'a mut T, lua : *mut c_lua::lua_State, mut
 ///
 pub fn push_lightuserdata<'a, T, F>(data: &'a mut T, lua : *mut c_lua::lua_State, mut metatable: F) -> i32
                               where F: FnMut(LuaTable),
-                                    T: Send + 'a + Any
+                                    T: 'a + Any
 {
     let typeid = format!("{:?}", TypeId::of::<T>());
     unsafe { c_lua::lua_pushlightuserdata(lua, mem::transmute(data)); };
@@ -177,6 +197,7 @@ pub trait NewStruct {
 
 pub struct LuaStruct<T> {
     lua: *mut lua_State,
+    light : bool,
     marker: PhantomData<T>,
 }
 
@@ -185,6 +206,15 @@ impl<T> LuaStruct<T> where T: NewStruct + Any {
     pub fn new(lua: *mut lua_State) -> LuaStruct<T> {
         LuaStruct {
             lua: lua,
+            light : false,
+            marker: PhantomData,
+        }
+    }
+
+    pub fn new_light(lua: *mut lua_State) -> LuaStruct<T> {
+        LuaStruct {
+            lua: lua,
+            light : true,
             marker: PhantomData,
         }
     }
@@ -205,7 +235,7 @@ impl<T> LuaStruct<T> where T: NewStruct + Any {
                 c_lua::lua_settable(self.lua, -3);
 
                 // index "__gc" call the object's destructor
-                {
+                if !self.light {
                     "__gc".push_to_lua(self.lua);
 
                     // pushing destructor_impl as a lightuserdata
@@ -238,19 +268,30 @@ impl<T> LuaStruct<T> where T: NewStruct + Any {
                 c_lua::lua_newtable(self.lua);
                 "__call".push_to_lua(self.lua);
 
-                // pushing destructor_impl as a lightuserdata
-                let constructor_impl: fn(*mut c_lua::lua_State) -> libc::c_int = constructor_impl::<T>;
-                c_lua::lua_pushlightuserdata(self.lua, mem::transmute(constructor_impl));
+                if self.light {
+                    // pushing destructor_impl as a lightuserdata
+                    let constructor_impl: fn(*mut c_lua::lua_State) -> libc::c_int = constructor_light_impl::<T>;
+                    c_lua::lua_pushlightuserdata(self.lua, mem::transmute(constructor_impl));
 
-                // pushing destructor_wrapper as a closure
-                c_lua::lua_pushcclosure(self.lua, mem::transmute(constructor_wrapper), 1);
-                c_lua::lua_settable(self.lua, -3);
+                    // pushing destructor_wrapper as a closure
+                    c_lua::lua_pushcclosure(self.lua, mem::transmute(constructor_light_wrapper), 1);
+                    c_lua::lua_settable(self.lua, -3);
+                } else {
+                    // pushing destructor_impl as a lightuserdata
+                    let constructor_impl: fn(*mut c_lua::lua_State) -> libc::c_int = constructor_impl::<T>;
+                    c_lua::lua_pushlightuserdata(self.lua, mem::transmute(constructor_impl));
+
+                    // pushing destructor_wrapper as a closure
+                    c_lua::lua_pushcclosure(self.lua, mem::transmute(constructor_wrapper), 1);
+                    c_lua::lua_settable(self.lua, -3);
+                }
+
                 c_lua::lua_setmetatable(self.lua, -2);
             }
-            // c_lua::lua_pop(self.lua, 1);
         }
         self
     }
+
 
     pub fn def<P>(&mut self, name : &str, param : P) -> &mut LuaStruct<T> where P : LuaPush {
         let tname = T::name();
