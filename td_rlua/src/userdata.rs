@@ -47,7 +47,9 @@ fn constructor_impl<T>(lua: *mut c_lua::lua_State) -> libc::c_int where T : NewS
     1
 }
 
-
+// constructor direct create light object, 
+// in rust we alloc the memory, avoid copy the memory
+// in lua we get the object, we must free the memory
 extern fn constructor_light_wrapper(lua: *mut c_lua::lua_State) -> libc::c_int {
     let impl_raw = unsafe { c_lua::lua_touserdata(lua, c_lua::lua_upvalueindex(1)) };
     let imp: fn(*mut c_lua::lua_State)->::libc::c_int = unsafe { mem::transmute(impl_raw) };
@@ -291,7 +293,6 @@ impl<T> LuaStruct<T> where T: NewStruct + Any {
         }
         self
     }
-
 
     pub fn def<P>(&mut self, name : &str, param : P) -> &mut LuaStruct<T> where P : LuaPush {
         let tname = T::name();
