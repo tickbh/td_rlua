@@ -4,7 +4,6 @@ use c_lua::lua_State;
 use LuaPush;
 use LuaRead;
 use LuaTable;
-use libc;
 
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;

@@ -1,5 +1,4 @@
 use c_lua;
-use c_lua::lua_State;
 
 use LuaPush;
 use LuaRead;

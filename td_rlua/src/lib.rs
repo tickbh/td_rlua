@@ -26,7 +26,6 @@ pub use c_lua::*;
 pub use functions::{function0, function1, function2, function3, function4, function5, function6, function7, function8, function9, function10, Function};
 pub use userdata::{push_userdata, push_lightuserdata, read_userdata, LuaStruct, NewStruct};
 pub use lua_tables::LuaTable;
-#[allow(raw_pointer_derive)]
 pub struct Lua {
     lua: *mut lua_State,
     own: bool,
