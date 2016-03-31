@@ -8,7 +8,7 @@ Add this to the `Cargo.toml` file of your project
 
 ```toml
 [dependencies]
-td_rlua = "0.1"
+td_rlua = "0.1.0"
 ```
 
 ### How to use it?
