@@ -1,11 +1,11 @@
 [package]
 name = "c_lua"
-version = "0.0.4"
+version = "0.1.0"
 authors = ["wugd"]
 description = "Bindings for Lua 5.3"
 build = "build.rs"
 links = "lua"
-license = "MIT"
+license = "MIT/Apache-2.0"
 
 [build-dependencies]
 pkg-config = "0.3"
