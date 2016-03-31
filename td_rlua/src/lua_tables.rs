@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use libc;
 
-use c_lua::{self, lua_State};
+use td_clua::{self, lua_State};
 use LuaPush;
 use LuaRead;
 /// Represents a table stored in the Lua context.
@@ -16,7 +16,7 @@ pub struct LuaTable {
 
 impl LuaRead for LuaTable {
     fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<LuaTable> {
-        if unsafe { c_lua::lua_istable(lua, index) } {
+        if unsafe { td_clua::lua_istable(lua, index) } {
             Some(LuaTable { table: lua, top : 0, index : index })
         } else {
             None
@@ -46,14 +46,14 @@ impl LuaTable {
 
     pub fn clear_top(&mut self) {
         if self.top != 0 {
-            unsafe { c_lua::lua_pop(self.table, self.top); };
+            unsafe { td_clua::lua_pop(self.table, self.top); };
             self.top = 0;
         }
     }
 
     /// Iterates over the elements inside the table.
     pub fn iter<K, V>(&mut self) -> LuaTableIterator<K, V> {
-        unsafe { c_lua::lua_pushnil(self.table) };
+        unsafe { td_clua::lua_pushnil(self.table) };
 
         LuaTableIterator {
             table: self,
@@ -69,7 +69,7 @@ impl LuaTable {
     {
         self.clear_top();
         index.push_to_lua(self.table);
-        unsafe { c_lua::lua_gettable(self.table, self.index - 1); }
+        unsafe { td_clua::lua_gettable(self.table, self.index - 1); }
         self.top = 1;
         LuaRead::lua_read(self.table)
     }
@@ -82,7 +82,7 @@ impl LuaTable {
         self.clear_top();
         index.push_to_lua(self.table);
         value.push_to_lua(self.table);
-        unsafe { c_lua::lua_settable(self.table, self.index - 2); }
+        unsafe { td_clua::lua_settable(self.table, self.index - 2); }
     }
 
     /// Inserts or modifies an elements of the table.
@@ -92,8 +92,8 @@ impl LuaTable {
         self.clear_top();
         index.push_to_lua(self.table);
         unsafe {
-            c_lua::lua_pushcfunction(self.table, func);
-            c_lua::lua_settable(self.table, self.index - 2);
+            td_clua::lua_pushcfunction(self.table, func);
+            td_clua::lua_settable(self.table, self.index - 2);
         }
     }
 
@@ -105,8 +105,8 @@ impl LuaTable {
         self.clear_top();
         index.clone().push_to_lua(self.table);
         unsafe { 
-            c_lua::lua_newtable(self.table);
-            c_lua::lua_settable(self.table, self.index - 2); 
+            td_clua::lua_newtable(self.table);
+            td_clua::lua_settable(self.table, self.index - 2); 
         }
         self.query(index).unwrap()
     }
@@ -114,20 +114,20 @@ impl LuaTable {
     pub fn table_len(&mut self) -> usize {
         self.clear_top();
         unsafe {
-            c_lua::lua_rawlen(self.table, self.index)
+            td_clua::lua_rawlen(self.table, self.index)
         }
     }
 
     // /// Obtains or create the metatable of the table.
     pub fn get_or_create_metatable(&mut self) -> LuaTable {
         self.clear_top();
-        let result = unsafe { c_lua::lua_getmetatable(self.table, self.index) };
+        let result = unsafe { td_clua::lua_getmetatable(self.table, self.index) };
 
         if result == 0 {
             unsafe {
-                c_lua::lua_newtable(self.table);
-                c_lua::lua_setmetatable(self.table, -2);
-                let r = c_lua::lua_getmetatable(self.table, self.index);
+                td_clua::lua_newtable(self.table);
+                td_clua::lua_setmetatable(self.table, -2);
+                let r = td_clua::lua_getmetatable(self.table, self.index);
                 assert!(r != 0);
             }
         }
@@ -152,7 +152,7 @@ impl<'t, K, V> Iterator for LuaTableIterator<'t, K, V>
         }
         let state = self.table.table;
         // this call pushes the next key and value on the stack
-        if unsafe { !c_lua::lua_istable(state, -2) || c_lua::lua_next(state, -2) == 0 } {
+        if unsafe { !td_clua::lua_istable(state, -2) || td_clua::lua_next(state, -2) == 0 } {
             self.finished = true;
             return None;
         }
@@ -160,7 +160,7 @@ impl<'t, K, V> Iterator for LuaTableIterator<'t, K, V>
         let key = LuaRead::lua_read_at_position(state, -2);
         let value = LuaRead::lua_read_at_position(state, -1);
         // removing the value, leaving only the key on the top of the stack
-        unsafe { c_lua::lua_pop(state, 1) };
+        unsafe { td_clua::lua_pop(state, 1) };
 
         if key.is_none() || value.is_none() {
             Some(None)
@@ -173,7 +173,7 @@ impl<'t, K, V> Iterator for LuaTableIterator<'t, K, V>
 impl<'t, K, V> Drop for LuaTableIterator<'t, K, V> {
     fn drop(&mut self) {
         if !self.finished {
-            unsafe { c_lua::lua_pop(self.table.table, 1) }
+            unsafe { td_clua::lua_pop(self.table.table, 1) }
         }
     }
 }

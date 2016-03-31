@@ -1,4 +1,4 @@
-use c_lua;
+use td_clua;
 
 use LuaPush;
 use LuaRead;
@@ -6,13 +6,13 @@ use LuaRead;
 macro_rules! tuple_impl {
     ($ty:ident) => (
         impl<$ty> LuaPush for ($ty,) where $ty: LuaPush {
-            fn push_to_lua(self, lua: *mut c_lua::lua_State) -> i32 {
+            fn push_to_lua(self, lua: *mut td_clua::lua_State) -> i32 {
                 self.0.push_to_lua(lua)
             }
         }
 
         impl<$ty> LuaRead for ($ty,) where $ty: LuaRead {
-            fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<($ty,)> {
+            fn lua_read_at_position(lua: *mut td_clua::lua_State, index: i32) -> Option<($ty,)> {
                 LuaRead::lua_read_at_position(lua, index).map(|v| (v,))
             }
         }
@@ -23,7 +23,7 @@ macro_rules! tuple_impl {
         impl<$first: LuaPush, $($other: LuaPush),+>
             LuaPush for ($first, $($other),+)
         {
-            fn push_to_lua(self, lua: *mut c_lua::lua_State) -> i32 {
+            fn push_to_lua(self, lua: *mut td_clua::lua_State) -> i32 {
                 match self {
                     ($first, $($other),+) => {
                         let mut total = $first.push_to_lua(lua);
@@ -44,7 +44,7 @@ macro_rules! tuple_impl {
         impl<$first: LuaRead, $($other: LuaRead),+>
             LuaRead for ($first, $($other),+)
         {
-            fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<($first, $($other),+)> {
+            fn lua_read_at_position(lua: *mut td_clua::lua_State, index: i32) -> Option<($first, $($other),+)> {
                 let mut i = index;
                 let $first: $first = match LuaRead::lua_read_at_position(lua, i) {
                     Some(v) => v,

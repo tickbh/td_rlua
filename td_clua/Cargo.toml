@@ -1,5 +1,5 @@
 [package]
-name = "c_lua"
+name = "td_clua"
 version = "0.1.0"
 authors = ["wugd"]
 description = "Bindings for Lua 5.3"

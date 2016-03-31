@@ -1,9 +1,8 @@
 extern crate td_rlua;
-extern crate c_lua;
+extern crate td_clua;
 extern crate libc;
 use td_rlua::Lua;
-use c_lua::lua_State;
-// use td_rlua::values;
+use td_clua::*;
 use td_rlua::LuaTable;
 use td_rlua::LuaPush;
 use td_rlua::LuaRead;
@@ -88,8 +87,8 @@ fn test_userdata(state : &mut Lua) {
 
 }
 
-extern "C" fn load_func(lua: *mut c_lua::lua_State) -> libc::c_int {
-    let path = unsafe { c_lua::lua_tostring(lua, -1) };
+extern "C" fn load_func(lua: *mut td_clua::lua_State) -> libc::c_int {
+    let path = unsafe { td_clua::lua_tostring(lua, -1) };
     let path = unsafe { CStr::from_ptr(path) };
     let path = String::from_utf8(path.to_bytes().to_vec()).unwrap();
     println!("path:{}", path);
@@ -123,7 +122,7 @@ fn custom_struct() {
     }
 
     impl<'a> LuaRead for &'a mut TestLuaSturct {
-        fn lua_read_at_position(lua: *mut c_lua::lua_State, index: i32) -> Option<&'a mut TestLuaSturct> {
+        fn lua_read_at_position(lua: *mut td_clua::lua_State, index: i32) -> Option<&'a mut TestLuaSturct> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -164,9 +163,9 @@ fn main() {
     // state.set("xx", 5);
     // let index = CString::new("xx").unwrap();
     // let xx : Option<i32> = state.query("xx");
-    // // unsafe { c_lua::lua_getglobal(state.state(), index.as_ptr()); }
+    // // unsafe { td_clua::lua_getglobal(state.state(), index.as_ptr()); }
     // // "xx".push_to_lua(state);
-    // // unsafe { c_lua::lua_setglobal(state.state(), index.as_ptr()); }
+    // // unsafe { td_clua::lua_setglobal(state.state(), index.as_ptr()); }
     // // let xx : i32 = td_rlua::LuaRead::lua_read(state).ok().unwrap();
     // println!("xx = {:?}", xx);
 

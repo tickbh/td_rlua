@@ -6,4 +6,5 @@ rust:
  - nightly
 
 script:
+  - cargo test --manifest-path td_clua/Cargo.toml
   - cargo test --manifest-path td_rlua/Cargo.toml

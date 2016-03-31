@@ -11,7 +11,7 @@ keywords = ["lua", "wrapper"]
 [dependencies]
 libc = "*"
 
-[dependencies.c_lua]
+[dependencies.td_clua]
 version = "*"
-path = "../c_lua"
+path = "../td_clua"
 

@@ -1,4 +1,4 @@
-extern crate c_lua;
+extern crate td_clua;
 extern crate libc;
 
 use std::borrow::Borrow;
@@ -22,7 +22,7 @@ pub mod userdata;
 pub mod tuples;
 pub mod rust_tables;
 
-pub use c_lua::*;
+pub use td_clua::*;
 pub use functions::{function0, function1, function2, function3, function4, function5, function6, function7, function8, function9, function10, Function};
 pub use userdata::{push_userdata, push_lightuserdata, read_userdata, LuaStruct, NewStruct};
 pub use lua_tables::LuaTable;
@@ -39,8 +39,8 @@ macro_rules! impl_exec_func {
             unsafe {
                 let state = self.state();
                 let error = CString::new("error_handle").unwrap();
-                c_lua::lua_getglobal(state, error.as_ptr());
-                c_lua::lua_getglobal(state, func_name.as_ptr());
+                lua_getglobal(state, error.as_ptr());
+                td_clua::lua_getglobal(state, func_name.as_ptr());
 
                 let mut index = 0;
 
@@ -48,9 +48,9 @@ macro_rules! impl_exec_func {
                     index += $p.push_to_lua(self.state());
                 )*
 
-                let success = c_lua::lua_pcall(state, index, 0, -1 * index - 2);
+                let success = td_clua::lua_pcall(state, index, 0, -1 * index - 2);
                 if success != 0 {
-                    c_lua::lua_pop(state, 1);
+                    td_clua::lua_pop(state, 1);
                 }
                 success
             }
@@ -66,28 +66,28 @@ impl Lua {
     /// The function panics if the underlying call to `luaL_newstate` fails
     /// (which indicates lack of memory).
     pub fn new() -> Lua {
-        let lua = unsafe { c_lua::luaL_newstate() };
+        let lua = unsafe { td_clua::luaL_newstate() };
         if lua.is_null() {
             panic!("lua_newstate failed");
         }
 
         // called whenever lua encounters an unexpected error.
-        extern "C" fn panic(lua: *mut c_lua::lua_State) -> libc::c_int {
-            let err = unsafe { c_lua::lua_tostring(lua, -1) };
+        extern "C" fn panic(lua: *mut td_clua::lua_State) -> libc::c_int {
+            let err = unsafe { td_clua::lua_tostring(lua, -1) };
             let err = unsafe { CStr::from_ptr(err) };
             let err = String::from_utf8(err.to_bytes().to_vec()).unwrap();
             panic!("PANIC: unprotected error in call to Lua API ({})\n", err);
         }
 
-        extern "C" fn error_handle(lua: *mut c_lua::lua_State) -> libc::c_int {
-            let err = unsafe { c_lua::lua_tostring(lua, -1) };
+        extern "C" fn error_handle(lua: *mut td_clua::lua_State) -> libc::c_int {
+            let err = unsafe { td_clua::lua_tostring(lua, -1) };
             let err = unsafe { CStr::from_ptr(err) };
             let err = String::from_utf8(err.to_bytes().to_vec()).unwrap();
             println!("error:{}", err);
             0
         }
 
-        unsafe { c_lua::lua_atpanic(lua, panic) };
+        unsafe { td_clua::lua_atpanic(lua, panic) };
         let mut lua = Lua {
             lua: lua,
             own: true,
@@ -123,18 +123,18 @@ impl Lua {
         }
     }
 
-    pub fn register<I>(&mut self, index : I, func : extern "C" fn(*mut c_lua::lua_State) -> libc::c_int) -> i32
+    pub fn register<I>(&mut self, index : I, func : extern "C" fn(*mut td_clua::lua_State) -> libc::c_int) -> i32
                     where I: Borrow<str>
     {
         let index = CString::new(index.borrow()).unwrap();
-        unsafe { c_lua::lua_register(self.state(), index.as_ptr(), func) };
+        unsafe { td_clua::lua_register(self.state(), index.as_ptr(), func) };
         0
     }
 
     /// Opens all standard Lua libraries.
     /// This is done by calling `luaL_openlibs`.
     pub fn openlibs(&mut self) {
-        unsafe { c_lua::luaL_openlibs(self.lua) }
+        unsafe { td_clua::luaL_openlibs(self.lua) }
     }
 
     /// Reads the value of a global variable.
@@ -142,7 +142,7 @@ impl Lua {
                          where I: Borrow<str>, V: LuaRead
     {
         let index = CString::new(index.borrow()).unwrap();
-        unsafe { c_lua::lua_getglobal(self.lua, index.as_ptr()); }
+        unsafe { td_clua::lua_getglobal(self.lua, index.as_ptr()); }
         LuaRead::lua_read(self.state())
     }
 
@@ -152,7 +152,7 @@ impl Lua {
     {
         let index = CString::new(index.borrow()).unwrap();
         value.push_to_lua(self.state());
-        unsafe { c_lua::lua_setglobal(self.lua, index.as_ptr()); }
+        unsafe { td_clua::lua_setglobal(self.lua, index.as_ptr()); }
     }
 
     pub fn exec_string<'a, I, R>(&'a mut self, index : I) -> Option<R>
@@ -162,11 +162,11 @@ impl Lua {
         unsafe {
             let state = self.state();
             let error = CString::new("error_handle").unwrap();
-            c_lua::lua_getglobal(state, error.as_ptr());
-            c_lua::luaL_loadstring(state, index.as_ptr());
-            let success = c_lua::lua_pcall(state, 0, 1, -2);
+            td_clua::lua_getglobal(state, error.as_ptr());
+            td_clua::luaL_loadstring(state, index.as_ptr());
+            let success = td_clua::lua_pcall(state, 0, 1, -2);
             if success != 0 {
-                c_lua::lua_pop(state, 1);
+                td_clua::lua_pop(state, 1);
                 return None;
             }
             LuaRead::lua_read(state)
@@ -179,30 +179,30 @@ impl Lua {
     {
         let index2 = CString::new(index.borrow()).unwrap();
         unsafe { 
-            c_lua::lua_newtable(self.state());
-            c_lua::lua_setglobal(self.state(), index2.as_ptr()); 
+            td_clua::lua_newtable(self.state());
+            td_clua::lua_setglobal(self.state(), index2.as_ptr()); 
         }
         self.query(index).unwrap()
     }
 
-    pub fn add_lualoader(&mut self, func : extern "C" fn(*mut c_lua::lua_State) -> libc::c_int) -> i32 {
+    pub fn add_lualoader(&mut self, func : extern "C" fn(*mut td_clua::lua_State) -> libc::c_int) -> i32 {
         let state = self.state();
         unsafe {
             let package = CString::new("package").unwrap();
             let searchers = CString::new("searchers").unwrap();
-            c_lua::lua_getglobal(state, package.as_ptr());
-            c_lua::lua_getfield(state, -1, searchers.as_ptr());
-            c_lua::lua_pushcfunction(state, func);
-            let mut i = (c_lua::lua_rawlen(state, -2) + 1) as i32;
+            td_clua::lua_getglobal(state, package.as_ptr());
+            td_clua::lua_getfield(state, -1, searchers.as_ptr());
+            td_clua::lua_pushcfunction(state, func);
+            let mut i = (td_clua::lua_rawlen(state, -2) + 1) as i32;
             while i > 2 {
-                c_lua::lua_rawgeti(state, -2, i - 1);                               
-                c_lua::lua_rawseti(state, -3, i);
+                td_clua::lua_rawgeti(state, -2, i - 1);                               
+                td_clua::lua_rawseti(state, -3, i);
                 i = i - 1;
             }
-            c_lua::lua_rawseti(state, -2, 2);                                        
+            td_clua::lua_rawseti(state, -2, 2);                                        
             // set loaders into package
-            c_lua::lua_setfield(state, -2, searchers.as_ptr());                               
-            c_lua::lua_pop(state, 1);
+            td_clua::lua_setfield(state, -2, searchers.as_ptr());                               
+            td_clua::lua_pop(state, 1);
         }
         0
     }
@@ -219,11 +219,11 @@ impl Lua {
         }
 
         let short_name = CString::new(short_name).unwrap();
-        let ret = unsafe { c_lua::luaL_loadbuffer(self.state(), buffer.as_ptr() as *const i8, buffer.len(), short_name.as_ptr()) };
+        let ret = unsafe { td_clua::luaL_loadbuffer(self.state(), buffer.as_ptr() as *const i8, buffer.len(), short_name.as_ptr()) };
         if ret != 0 {
             let err_msg : String = unwrap_or!(LuaRead::lua_read(self.state()), return 0);
             let err_detail = CString::new(format!("error loading from file {} :\n\t{}", file_name, err_msg)).unwrap();
-            unsafe { c_lua::luaL_error(self.state(), err_detail.as_ptr()); }
+            unsafe { td_clua::luaL_error(self.state(), err_detail.as_ptr()); }
         }
         1
     }
@@ -272,7 +272,7 @@ pub trait LuaRead: Sized {
 impl Drop for Lua {
     fn drop(&mut self) {
         if self.own {
-            unsafe { c_lua::lua_close(self.lua) }
+            unsafe { td_clua::lua_close(self.lua) }
         }
     }
 }
