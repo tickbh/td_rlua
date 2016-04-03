@@ -80,9 +80,8 @@ impl LuaRead for String {
         }
 
         let c_str = unsafe { CStr::from_ptr(c_str_raw) };
-        let c_str = String::from_utf8(c_str.to_bytes().to_vec()).unwrap();
-
-        Some(c_str)
+        let c_str = String::from_utf8_lossy(c_str.to_bytes());
+        Some(c_str.to_string())
     }
 }
 
