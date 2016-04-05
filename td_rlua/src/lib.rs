@@ -21,6 +21,7 @@ pub mod functions;
 pub mod userdata;
 pub mod tuples;
 pub mod rust_tables;
+mod hotfix;
 
 pub use td_clua::*;
 pub use functions::{function0, function1, function2, function3, function4, function5, function6, function7, function8, function9, function10, Function};
@@ -226,6 +227,11 @@ impl Lua {
             unsafe { td_clua::luaL_error(self.state(), err_detail.as_ptr()); }
         }
         1
+    }
+
+    /// enable hotfix, can update the new func, and the old data will be keep and bind to the new func
+    pub fn enable_hotfix(&mut self) {
+        hotfix::load_hot_fix(self);
     }
 
     impl_exec_func!(exec_func0, );

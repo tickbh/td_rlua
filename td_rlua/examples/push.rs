@@ -129,6 +129,7 @@ fn custom_struct() {
 
     let mut lua = Lua::new();
     lua.openlibs();
+    lua.enable_hotfix();
     fn one_arg(obj : &mut TestLuaSturct) -> i32 { obj.index = 10; 5 };
     fn two_arg(obj : &mut TestLuaSturct, index : i32) { obj.index = index;};
 
