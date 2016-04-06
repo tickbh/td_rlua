@@ -233,6 +233,25 @@ assert_eq!(obj.unwrap().index, 121);
 let obj : Option<&mut TestLuaSturct> = lua.exec_string("return TestLuaSturct()");
 assert_eq!(obj.unwrap().index, 19);
 ```
+### HotFix
+in runtime, if we need change some logic, we need restart the process, it may lose some memory data
+so sometimes we need update the logic, add keep the memory data, so we need hotfix
+```rust
+let mut lua = Lua::new();
+lua.openlibs();
+lua.enable_hotfix();
+let _ = lua.exec_func2("hotfix", r"
+    local value = {3, 4}
+    function get_a()
+        value[2] = 3
+        return value[1]
+    end
+
+    function get_b()
+        return value[2]
+    end
+    ", "hotfix");
+```
 ### Contributing
 
 Contributions are welcome!
