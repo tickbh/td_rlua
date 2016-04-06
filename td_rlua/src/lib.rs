@@ -34,7 +34,7 @@ pub struct Lua {
 
 macro_rules! impl_exec_func {
     ($name:ident, $($p:ident),*) => (
-        #[allow(non_snake_case)]
+        #[allow(non_snake_case, unused_mut)]
         pub fn $name<Z, $($p),*>(&mut self, func_name : Z, $($p : $p, )*) -> i32 where Z: Borrow<str>, $($p : LuaPush),* {
             let func_name = CString::new(func_name.borrow()).unwrap();
             unsafe {
@@ -44,7 +44,6 @@ macro_rules! impl_exec_func {
                 td_clua::lua_getglobal(state, func_name.as_ptr());
 
                 let mut index = 0;
-
                 $(
                     index += $p.push_to_lua(self.state());
                 )*

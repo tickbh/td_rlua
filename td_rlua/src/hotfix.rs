@@ -2,10 +2,15 @@ use super::Lua;
 
 //hot fix mod
 
+///in runtime call hotfix func(reload code) or hotfix_file func(reload file)
+///we will keep the old data but function, but hotfix not support change name,
+///if we add new upvalue, it'a also support
+///so after hotfix, the function is new and the data is old, so we success hotfix
 pub fn load_hot_fix(lua : &mut Lua) {
 
     let func = r"
         function hotfix(chunk, check_name)
+            check_name = check_name or 'hotfix'
             local env = {}
             setmetatable(env, { __index = _G })
             local _ENV = env
