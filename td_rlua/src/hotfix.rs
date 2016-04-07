@@ -51,7 +51,7 @@ pub fn load_hot_fix(lua : &mut Lua) {
                 local old_meta = debug.getmetatable(g_t)
                 local new_meta = debug.getmetatable(env_t)
                 if type(old_meta) == 'table' and type(new_meta) == 'table' then
-                    update_table(new_meta, old_meta, name..'s Meta', Deepth..'  '..name..'s Meta'..'  ' )
+                    update_table(new_meta, old_meta, name..'s Meta', deep..'  '..name..'s Meta'..'  ' )
                 end
             end
 
