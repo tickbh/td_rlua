@@ -27,10 +27,21 @@ pub struct lua_State;
 
 pub type lua_CFunction = extern "C" fn(L: *mut lua_State) -> c_int;
 
-pub type lua_Reader = extern "C" fn(L: *mut lua_State, ud: *mut libc::c_void, sz: *mut libc::size_t) -> *const libc::c_char;
-pub type lua_Writer = extern "C" fn(L: *mut lua_State, p: *const libc::c_void, sz: libc::size_t, ud: *mut libc::c_void) -> libc::c_int;
+pub type lua_Reader = extern "C" fn(L: *mut lua_State,
+                                    ud: *mut libc::c_void,
+                                    sz: *mut libc::size_t)
+                                    -> *const libc::c_char;
+pub type lua_Writer = extern "C" fn(L: *mut lua_State,
+                                    p: *const libc::c_void,
+                                    sz: libc::size_t,
+                                    ud: *mut libc::c_void)
+                                    -> libc::c_int;
 
-pub type lua_Alloc = extern "C" fn(ud: *mut libc::c_void, ptr: *mut libc::c_void, osize: libc::size_t, nsize: libc::size_t) -> *mut libc::c_void;
+pub type lua_Alloc = extern "C" fn(ud: *mut libc::c_void,
+                                   ptr: *mut libc::c_void,
+                                   osize: libc::size_t,
+                                   nsize: libc::size_t)
+                                   -> *mut libc::c_void;
 
 pub type lua_Hook = extern "C" fn(L: *mut lua_State, ar: *mut lua_Debug);
 
@@ -107,8 +118,7 @@ pub struct lua_Debug {
     pub nparams: libc::c_uchar,
     pub isvararg: libc::c_char,
     pub istailcall: libc::c_char,
-    pub short_src: [libc::c_char ; 60],
-    //i_ci: *CallInfo
+    pub short_src: [libc::c_char; 60], // i_ci: *CallInfo
 }
 
 extern "C" {
@@ -143,7 +153,10 @@ extern "C" {
     pub fn lua_tointegerx(L: *mut lua_State, idx: c_int, isnum: *mut c_int) -> lua_Integer;
     pub fn lua_tounsignedx(L: *mut lua_State, idx: c_int, isnum: *mut c_int) -> lua_Unsigned;
     pub fn lua_toboolean(L: *mut lua_State, idx: c_int) -> c_int;
-    pub fn lua_tolstring(L: *mut lua_State, idx: c_int, len: *mut libc::size_t) -> *const libc::c_char;
+    pub fn lua_tolstring(L: *mut lua_State,
+                         idx: c_int,
+                         len: *mut libc::size_t)
+                         -> *const libc::c_char;
     pub fn lua_rawlen(L: *mut lua_State, idx: c_int) -> libc::size_t;
     pub fn lua_tocfunction(L: *mut lua_State, idx: c_int) -> Option<lua_CFunction>;
     pub fn lua_touserdata(L: *mut lua_State, idx: c_int) -> *mut libc::c_void;
@@ -160,7 +173,10 @@ extern "C" {
     pub fn lua_pushlstring(L: *mut lua_State, s: *const libc::c_char, l: libc::size_t);
     pub fn lua_pushstring(L: *mut lua_State, s: *const libc::c_char);
     // TODO: lua_pushvfstring()
-    pub fn lua_pushfstring(L: *mut lua_State, fmt: *const libc::c_char, ...) -> *const libc::c_char;
+    pub fn lua_pushfstring(L: *mut lua_State,
+                           fmt: *const libc::c_char,
+                           ...)
+                           -> *const libc::c_char;
     pub fn lua_pushcclosure(L: *mut lua_State, f: lua_CFunction, n: c_int);
     pub fn lua_pushboolean(L: *mut lua_State, b: c_int);
     pub fn lua_pushlightuserdata(L: *mut lua_State, p: *mut libc::c_void);
@@ -186,13 +202,32 @@ extern "C" {
     pub fn lua_setmetatable(L: *mut lua_State, objindex: c_int) -> c_int;
     pub fn lua_setfenv(L: *mut lua_State, idx: c_int) -> c_int;
 
-    pub fn lua_callk(L: *mut lua_State, nargs: c_int, nresults: c_int, ctx: c_int, k: Option<lua_CFunction>);
+    pub fn lua_callk(L: *mut lua_State,
+                     nargs: c_int,
+                     nresults: c_int,
+                     ctx: c_int,
+                     k: Option<lua_CFunction>);
     pub fn lua_getctx(L: *mut lua_State, ctx: c_int) -> c_int;
-    pub fn lua_pcallk(L: *mut lua_State, nargs: c_int, nresults: c_int, errfunc: c_int, ctx: c_int, k: Option<lua_CFunction>) -> c_int;
-    pub fn lua_load(L: *mut lua_State, reader: lua_Reader, dt: *mut libc::c_void, chunkname: *const libc::c_char, mode: *const libc::c_char) -> c_int;
+    pub fn lua_pcallk(L: *mut lua_State,
+                      nargs: c_int,
+                      nresults: c_int,
+                      errfunc: c_int,
+                      ctx: c_int,
+                      k: Option<lua_CFunction>)
+                      -> c_int;
+    pub fn lua_load(L: *mut lua_State,
+                    reader: lua_Reader,
+                    dt: *mut libc::c_void,
+                    chunkname: *const libc::c_char,
+                    mode: *const libc::c_char)
+                    -> c_int;
     pub fn lua_dump(L: *mut lua_State, writer: lua_Writer, data: *mut libc::c_void) -> c_int;
 
-    pub fn lua_yieldk(L: *mut lua_State, nresults: c_int, ctx: c_int, k: Option<lua_CFunction>) -> c_int;
+    pub fn lua_yieldk(L: *mut lua_State,
+                      nresults: c_int,
+                      ctx: c_int,
+                      k: Option<lua_CFunction>)
+                      -> c_int;
     pub fn lua_resume(L: *mut lua_State, from: *mut lua_State, narg: c_int) -> c_int;
     pub fn lua_status(L: *mut lua_State) -> c_int;
 
@@ -226,8 +261,13 @@ extern "C" {
     pub fn luaL_loadstring(L: *mut lua_State, p: *const libc::c_char) -> c_int;
     pub fn luaL_setmetatable(L: *mut lua_State, tname: *const libc::c_char);
     pub fn luaL_error(L: *mut lua_State, info: *const libc::c_char);
-    pub fn luaL_loadbufferx(L: *mut lua_State, buff: *const libc::c_char, sz : libc::size_t, name : *const libc::c_char, mode : *const libc::c_char) -> c_int;
-    
+    pub fn luaL_loadbufferx(L: *mut lua_State,
+                            buff: *const libc::c_char,
+                            sz: libc::size_t,
+                            name: *const libc::c_char,
+                            mode: *const libc::c_char)
+                            -> c_int;
+
 }
 #[inline(always)]
 pub fn lua_upvalueindex(i: c_int) -> c_int {
@@ -251,7 +291,7 @@ pub unsafe fn lua_yield(L: *mut lua_State, nresults: c_int) -> c_int {
 
 #[inline(always)]
 pub unsafe fn lua_pop(L: *mut lua_State, n: c_int) {
-    lua_settop(L, -n-1)
+    lua_settop(L, -n - 1)
 }
 
 #[inline(always)]
@@ -331,7 +371,11 @@ pub unsafe fn lua_insert(L: *mut lua_State, idx: c_int) {
     lua_rotate(L, idx, 1);
 }
 
-pub unsafe fn luaL_loadbuffer(L: *mut lua_State, buff: *const libc::c_char, sz : libc::size_t, name : *const libc::c_char)  -> c_int{
+pub unsafe fn luaL_loadbuffer(L: *mut lua_State,
+                              buff: *const libc::c_char,
+                              sz: libc::size_t,
+                              name: *const libc::c_char)
+                              -> c_int {
     luaL_loadbufferx(L, buff, sz, name, ptr::null_mut())
 }
 
@@ -350,7 +394,7 @@ impl default::Default for lua_Debug {
             nparams: 0,
             isvararg: 0,
             istailcall: 0,
-            short_src: [0 ; 60]
+            short_src: [0; 60],
         }
     }
 }

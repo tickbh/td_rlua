@@ -126,7 +126,6 @@ fn closures_extern_access() {
     assert_eq!(a, 20)
 }
 
-
 #[test]
 fn test_exec_func() {
     let mut lua = Lua::new();
@@ -140,7 +139,7 @@ fn test_exec_func() {
 
     {
         let mut index = 5;
-        lua.set("sub", td_rlua::function3(|a:i32, b:u32, c : String| index -= (a + b as i32)));
+        lua.set("sub", td_rlua::function3(|a:i32, b:u32, _c : String| index -= (a + b as i32)));
         let success: i32 = lua.exec_func3("sub", 3, 1, "".to_string());
         assert!(success == 0);
         assert_eq!(index, 1);

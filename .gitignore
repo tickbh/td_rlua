@@ -1,2 +1,2 @@
-/td_rlua/*.lock
+*.lock
 */target/*

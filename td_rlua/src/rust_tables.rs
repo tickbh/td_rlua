@@ -1,5 +1,5 @@
-use c_lua;
-use c_lua::lua_State;
+use td_clua;
+use td_clua::lua_State;
 
 use LuaPush;
 use LuaRead;
@@ -12,7 +12,7 @@ fn push_iter<V, I>(lua: *mut lua_State, iterator: I) -> i32
                       where V: LuaPush, I: Iterator<Item=V>
 {
     // creating empty table
-    unsafe { c_lua::lua_newtable(lua) };
+    unsafe { td_clua::lua_newtable(lua) };
 
     for (elem, index) in iterator.zip((1 ..)) {
         let size = elem.push_to_lua(lua);
@@ -22,10 +22,10 @@ fn push_iter<V, I>(lua: *mut lua_State, iterator: I) -> i32
             1 => {
                 let index = index as u32;
                 index.push_to_lua(lua);
-                unsafe { c_lua::lua_insert(lua, -2) }
-                unsafe { c_lua::lua_settable(lua, -3) }
+                unsafe { td_clua::lua_insert(lua, -2) }
+                unsafe { td_clua::lua_settable(lua, -3) }
             },
-            2 => unsafe { c_lua::lua_settable(lua, -3) },
+            2 => unsafe { td_clua::lua_settable(lua, -3) },
             _ => unreachable!()
         }
     }
@@ -39,14 +39,14 @@ fn push_rec_iter<V, I>(lua: *mut lua_State, iterator: I) -> i32
     let (nrec, _) = iterator.size_hint();
 
     // creating empty table with pre-allocated non-array elements
-    unsafe { c_lua::lua_createtable(lua, 0, nrec as i32) };
+    unsafe { td_clua::lua_createtable(lua, 0, nrec as i32) };
 
     for elem in iterator {
         let size = elem.push_to_lua(lua);
 
         match size {
             0 => continue,
-            2 => unsafe { c_lua::lua_settable(lua, -3) },
+            2 => unsafe { td_clua::lua_settable(lua, -3) },
             _ => unreachable!()
         }
     }

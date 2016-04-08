@@ -2,6 +2,8 @@
 
 This library is a high-level binding for Lua 5.3. You don't have access to the Lua stack, all you can do is read/write variables (including callbacks) and execute Lua code.
 
+[![Build Status](https://api.travis-ci.org/tickbh/td_rlua.svg?branch=master)](https://travis-ci.org/tickbh/td_rlua)
+
 ### How to install it?
 
 Add this to the `Cargo.toml` file of your project
@@ -230,6 +232,25 @@ assert_eq!(obj.unwrap().index, 121);
 
 let obj : Option<&mut TestLuaSturct> = lua.exec_string("return TestLuaSturct()");
 assert_eq!(obj.unwrap().index, 19);
+```
+### HotFix
+in runtime, if we need change some logic, we need restart the process, it may lose some memory data
+so sometimes we need update the logic, add keep the memory data, so we need hotfix
+```rust
+let mut lua = Lua::new();
+lua.openlibs();
+lua.enable_hotfix();
+let _ = lua.exec_func2("hotfix", r"
+    local value = {3, 4}
+    function get_a()
+        value[2] = 3
+        return value[1]
+    end
+
+    function get_b()
+        return value[2]
+    end
+    ", "hotfix");
 ```
 ### Contributing
 
