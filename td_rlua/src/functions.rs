@@ -9,9 +9,9 @@ use std::ptr;
 
 macro_rules! impl_function {
     ($name:ident, $($p:ident),*) => (
-        /// Wraps a type that implements `FnMut` so that it can be used by hlua.
-        ///
-        /// This is only needed because of a limitation in Rust's inferrence system.
+/// Wraps a type that implements `FnMut` so that it can be used by hlua.
+///
+/// This is only needed because of a limitation in Rust's inferrence system.
         pub fn $name<Z, R $(, $p)*>(f: Z) -> Function<Z, ($($p,)*), R> where Z: FnMut($($p),*) -> R {
             Function {
                 function: f,
@@ -123,10 +123,10 @@ impl_function_ext!(A, B, C, D, E, F, G, H, I);
 impl_function_ext!(A, B, C, D, E, F, G, H, I, J);
 
 // this function is called when Lua wants to call one of our functions
-extern fn wrapper<T, P, R>(lua: *mut td_clua::lua_State) -> libc::c_int
-                           where T: FunctionExt<P, Output=R>,
-                                 P: LuaRead + 'static,
-                                 R: LuaPush
+extern "C" fn wrapper<T, P, R>(lua: *mut td_clua::lua_State) -> libc::c_int
+    where T: FunctionExt<P, Output = R>,
+          P: LuaRead + 'static,
+          R: LuaPush
 {
     // loading the object that we want to call from the Lua context
     let data_raw = unsafe { td_clua::lua_touserdata(lua, td_clua::lua_upvalueindex(1)) };
@@ -137,12 +137,16 @@ extern fn wrapper<T, P, R>(lua: *mut td_clua::lua_State) -> libc::c_int
     let args = match LuaRead::lua_read_at_position(lua, -arguments_count as libc::c_int) {      // TODO: what if the user has the wrong params?
         Some(a) => a,
         _ => {
-            let err_msg = format!("wrong parameter types for callback function arguments_count is {}", arguments_count);
+            let err_msg = format!("wrong parameter types for callback function arguments_count \
+                                   is {}",
+                                  arguments_count);
             err_msg.push_to_lua(lua);
-            unsafe { td_clua::lua_error(lua); }
+            unsafe {
+                td_clua::lua_error(lua);
+            }
             unreachable!()
-        },
-        
+        }
+
     };
 
     let ret_value = data.call_mut(args);
@@ -151,4 +155,3 @@ extern fn wrapper<T, P, R>(lua: *mut td_clua::lua_State) -> libc::c_int
     let nb = ret_value.push_to_lua(lua);
     nb as libc::c_int
 }
-

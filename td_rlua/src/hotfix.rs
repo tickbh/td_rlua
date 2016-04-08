@@ -1,12 +1,12 @@
 use super::Lua;
 
-//hot fix mod
+// hot fix mod
 
 ///in runtime call hotfix func(reload code) or hotfix_file func(reload file)
 ///we will keep the old data but function, but hotfix not support change name,
 ///if we add new upvalue, it'a also support
 ///so after hotfix, the function is new and the data is old, so we success hotfix
-pub fn load_hot_fix(lua : &mut Lua) {
+pub fn load_hot_fix(lua: &mut Lua) {
 
     let func = r"
         function hotfix(chunk, check_name)
@@ -109,5 +109,5 @@ pub fn load_hot_fix(lua : &mut Lua) {
             end
             return hotfix(file_str, name)
     end";
-    let _ : Option<()> = lua.exec_string(func);
+    let _: Option<()> = lua.exec_string(func);
 }

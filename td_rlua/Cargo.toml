@@ -8,8 +8,5 @@ license = "MIT/Apache-2.0"
 keywords = ["lua", "wrapper"]
 [dependencies]
 libc = "^0.2.1"
-
-[dependencies.td_clua]
-version = "0.1.0"
-path = "../td_clua"
+td_clua = "0.1.0"
 
