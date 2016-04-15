@@ -52,6 +52,7 @@ macro_rules! impl_exec_func {
                 if success != 0 {
                     td_clua::lua_pop(state, 1);
                 }
+                td_clua::lua_pop(state, 1);
                 success
             }
         }
