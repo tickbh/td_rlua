@@ -252,6 +252,11 @@ let _ = lua.exec_func2("hotfix", r"
     end
     ", "hotfix");
 ```
+
+### Refer
+
+the project write refer to [hlua]( https://github.com/tomaka/hlua), if you use lua5.2, you can use it.
+
 ### Contributing
 
 Contributions are welcome!
