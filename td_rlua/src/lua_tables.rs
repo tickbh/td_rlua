@@ -5,19 +5,25 @@ use libc;
 use td_clua::{self, lua_State};
 use LuaPush;
 use LuaRead;
+use LuaGuard;
 /// Represents a table stored in the Lua context.
 ///
 /// Loading this type mutably borrows the Lua context.
 pub struct LuaTable {
     table: *mut lua_State,
-    top : i32,
+    pop : i32,
     index : i32,
 }
 
 impl LuaRead for LuaTable {
-    fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<LuaTable> {
+    fn lua_read_with_pop(lua: *mut lua_State, index: i32, pop: i32) -> Option<LuaTable> {
         if unsafe { td_clua::lua_istable(lua, index) } {
-            Some(LuaTable { table: lua, top : 0, index : index })
+            println!("top = {:?} pop = {}", unsafe { td_clua::lua_gettop(lua) }, pop);
+            for _ in 0 .. pop {
+                unsafe { td_clua::lua_pushnil(lua); }
+            }
+            println!("top = {:?}", unsafe { td_clua::lua_gettop(lua) });
+            Some(LuaTable { table: lua, pop : pop, index : index })
         } else {
             None
         }
@@ -26,7 +32,10 @@ impl LuaRead for LuaTable {
 
 impl Drop for LuaTable {
     fn drop(&mut self) {
-        self.clear_top();
+        if self.pop != 0 {
+            unsafe { td_clua::lua_pop(self.table, self.pop); };
+            self.pop = 0;
+        }
     }
 }
 
@@ -42,13 +51,6 @@ impl LuaTable {
     /// Destroys the LuaTable and returns its inner Lua context. Useful when it takes Lua by value.
     pub fn into_inner(self) -> *mut lua_State {
         self.table
-    }
-
-    pub fn clear_top(&mut self) {
-        if self.top != 0 {
-            unsafe { td_clua::lua_pop(self.table, self.top); };
-            self.top = 0;
-        }
     }
 
     /// Iterates over the elements inside the table.
@@ -67,11 +69,10 @@ impl LuaTable {
                          where R: LuaRead,
                                I: LuaPush
     {
-        self.clear_top();
         index.push_to_lua(self.table);
         unsafe { td_clua::lua_gettable(self.table, self.index - 1); }
-        self.top = 1;
-        LuaRead::lua_read(self.table)
+        let _guard = LuaGuard::new(self.table, 1);
+        LuaRead::lua_read_with_pop(self.table, -1, 1)
     }
 
     /// Inserts or modifies an elements of the table.
@@ -79,7 +80,6 @@ impl LuaTable {
                          where I: LuaPush,
                                V: LuaPush
     {
-        self.clear_top();
         index.push_to_lua(self.table);
         value.push_to_lua(self.table);
         unsafe { td_clua::lua_settable(self.table, self.index - 2); }
@@ -89,7 +89,6 @@ impl LuaTable {
     pub fn register<I>(&mut self, index: I, func : extern "C" fn(*mut lua_State) -> libc::c_int)
                          where I: LuaPush
     {
-        self.clear_top();
         index.push_to_lua(self.table);
         unsafe {
             td_clua::lua_pushcfunction(self.table, func);
@@ -102,7 +101,6 @@ impl LuaTable {
     pub fn empty_table<I>(&mut self, index: I) -> LuaTable
                               where I: LuaPush + Clone
     {
-        self.clear_top();
         index.clone().push_to_lua(self.table);
         unsafe { 
             td_clua::lua_newtable(self.table);
@@ -112,7 +110,6 @@ impl LuaTable {
     }
 
     pub fn table_len(&mut self) -> usize {
-        self.clear_top();
         unsafe {
             td_clua::lua_rawlen(self.table, self.index)
         }
@@ -120,7 +117,6 @@ impl LuaTable {
 
     // /// Obtains or create the metatable of the table.
     pub fn get_or_create_metatable(&mut self) -> LuaTable {
-        self.clear_top();
         let result = unsafe { td_clua::lua_getmetatable(self.table, self.index) };
 
         if result == 0 {
@@ -134,7 +130,7 @@ impl LuaTable {
 
         LuaTable {
             table: self.table,
-            top: 0,
+            pop: 1,
             index : -1,
         }
     }

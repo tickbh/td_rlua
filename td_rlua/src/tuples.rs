@@ -12,7 +12,7 @@ macro_rules! tuple_impl {
         }
 
         impl<$ty> LuaRead for ($ty,) where $ty: LuaRead {
-            fn lua_read_at_position(lua: *mut td_clua::lua_State, index: i32) -> Option<($ty,)> {
+            fn lua_read_with_pop(lua: *mut td_clua::lua_State, index: i32, _pop: i32) -> Option<($ty,)> {
                 LuaRead::lua_read_at_position(lua, index).map(|v| (v,))
             }
         }
@@ -44,7 +44,7 @@ macro_rules! tuple_impl {
         impl<$first: LuaRead, $($other: LuaRead),+>
             LuaRead for ($first, $($other),+)
         {
-            fn lua_read_at_position(lua: *mut td_clua::lua_State, index: i32) -> Option<($first, $($other),+)> {
+            fn lua_read_with_pop(lua: *mut td_clua::lua_State, index: i32, _pop: i32) -> Option<($first, $($other),+)> {
                 let mut i = index;
                 let $first: $first = match LuaRead::lua_read_at_position(lua, i) {
                     Some(v) => v,

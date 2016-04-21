@@ -16,7 +16,7 @@ fn readwrite() {
         }
     }
     impl<'a> LuaRead for &'a mut Foo {
-        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut Foo> {
+        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -69,7 +69,7 @@ fn type_check() {
         }
     }
     impl<'a> LuaRead for &'a mut Foo {
-        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut Foo> {
+        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -82,7 +82,7 @@ fn type_check() {
         }
     }
     impl<'a> LuaRead for &'a mut Bar {
-        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut Bar> {
+        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Bar> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -133,7 +133,7 @@ fn get_set_test() {
         }
     }
     impl<'a> td_rlua::LuaRead for &'a mut  Foo {
-        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut Foo> {
+        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -179,7 +179,7 @@ fn custom_struct() {
     }
 
     impl<'a> LuaRead for &'a mut TestLuaSturct {
-        fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<&'a mut TestLuaSturct> {
+        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut TestLuaSturct> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }

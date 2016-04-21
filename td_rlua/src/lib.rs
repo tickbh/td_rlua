@@ -32,6 +32,43 @@ pub struct Lua {
     own: bool,
 }
 
+
+pub struct LuaGuard {
+    pub lua: *mut lua_State,
+    pub size: i32,
+}
+
+impl LuaGuard {
+
+    pub fn forget(mut self) -> i32 {
+        let size = self.size;
+        self.size = 0;
+        size
+    }
+
+    pub fn empty(&self) -> LuaGuard {
+        LuaGuard {
+            lua: self.lua,
+            size: 0,
+        }
+    }
+
+    pub fn new_empty(lua: *mut lua_State) -> LuaGuard {
+        LuaGuard {
+            lua: lua,
+            size: 0,
+        }
+    }
+
+    pub fn new(lua: *mut lua_State, size: i32) -> LuaGuard {
+        LuaGuard {
+            lua: lua,
+            size: size,
+        }
+    }
+}
+
+
 macro_rules! impl_exec_func {
     ($name:ident, $($p:ident),*) => (
         #[allow(non_snake_case, unused_mut)]
@@ -144,7 +181,8 @@ impl Lua {
     {
         let index = CString::new(index.borrow()).unwrap();
         unsafe { td_clua::lua_getglobal(self.lua, index.as_ptr()); }
-        LuaRead::lua_read(self.state())
+        let _guard = LuaGuard::new(self.lua, 1);
+        LuaRead::lua_read_with_pop(self.state(), -1, 1)
     }
 
     /// Modifies the value of a global variable.
@@ -272,7 +310,12 @@ pub trait LuaRead: Sized {
     }
 
     /// Reads the data from Lua at a given position.
-    fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<Self>;
+    fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<Self> {
+        LuaRead::lua_read_with_pop(lua, index, 0)
+    }
+
+    /// Reads the data from Lua at a given position.
+    fn lua_read_with_pop(lua: *mut lua_State, index: i32, pop: i32) -> Option<Self>;
 }
 
 impl Drop for Lua {
@@ -283,3 +326,10 @@ impl Drop for Lua {
     }
 }
 
+impl Drop for LuaGuard {
+    fn drop(&mut self) {
+        if self.size != 0 {
+            unsafe { td_clua::lua_pop(self.lua, self.size) }
+        }
+    }
+}

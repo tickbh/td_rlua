@@ -83,7 +83,7 @@ impl<K> LuaPush for HashSet<K> where K: LuaPush + Eq + Hash
 }
 
 impl<T> LuaRead for Vec<T> where T : LuaRead {
-    fn lua_read_at_position(lua: *mut lua_State, index: i32) -> Option<Vec<T>> {
+    fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop : i32) -> Option<Vec<T>> {
         let mut lua_table : LuaTable = unwrap_or!(LuaRead::lua_read_at_position(lua, index), return None);
         let mut result = vec![];
         let len = lua_table.table_len();
