@@ -18,11 +18,9 @@ pub struct LuaTable {
 impl LuaRead for LuaTable {
     fn lua_read_with_pop(lua: *mut lua_State, index: i32, pop: i32) -> Option<LuaTable> {
         if unsafe { td_clua::lua_istable(lua, index) } {
-            println!("top = {:?} pop = {}", unsafe { td_clua::lua_gettop(lua) }, pop);
             for _ in 0 .. pop {
                 unsafe { td_clua::lua_pushnil(lua); }
             }
-            println!("top = {:?}", unsafe { td_clua::lua_gettop(lua) });
             Some(LuaTable { table: lua, pop : pop, index : index })
         } else {
             None

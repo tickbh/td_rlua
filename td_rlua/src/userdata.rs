@@ -312,6 +312,7 @@ impl<T> LuaStruct<T>
 
                 td_clua::lua_setmetatable(self.lua, -2);
             }
+            td_clua::lua_pop(self.lua, 1);
         }
         self
     }
