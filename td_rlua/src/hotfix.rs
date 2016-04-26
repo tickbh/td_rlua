@@ -93,6 +93,7 @@ pub fn load_hot_fix(lua: &mut Lua) {
                     update_table(value, g_value, name, 'G'..'  ')
                 end
             end
+            return 0
         end
 
         function hotfix_file(name)
@@ -105,7 +106,7 @@ pub fn load_hot_fix(lua: &mut Lua) {
             end
 
             if not file_str then
-                return nil
+                return -1
             end
             return hotfix(file_str, name)
     end";
