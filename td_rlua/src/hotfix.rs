@@ -43,7 +43,7 @@ pub fn load_hot_fix(lua: &mut Lua) {
                         elseif type(value) == 'table' then
                             update_table(value, old_value, name, deep..'  '..name..'  ')
                         end
-                    elseif old_value == nil then
+                    else
                         g_t[name] = value
                     end
                 end
