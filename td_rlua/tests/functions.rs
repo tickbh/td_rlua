@@ -1,6 +1,8 @@
 extern crate td_rlua;
+extern crate libc;
 use td_rlua::Lua;
 use td_rlua::LuaTable;
+use td_rlua::LuaPush;
 
 #[test]
 fn basic() {
@@ -144,4 +146,34 @@ fn test_exec_func() {
         assert!(success == 0);
         assert_eq!(index, 1);
     }
+}
+
+#[test]
+fn test_exec_func_by_param() {
+    let mut lua = Lua::new();
+    lua.openlibs();
+    let func = r"
+        function test() 
+            return testRust(1, 2, 3);
+        end
+
+        function test2(...) 
+            local t = {...}
+            local sum = 0
+            for _,v in ipairs(t) do
+                sum = sum + v
+            end
+            return sum
+        end
+    ";
+
+    extern "C" fn testRust(lua: *mut td_rlua::lua_State) -> libc::c_int {
+        let mut luaOb = Lua::from_existing_state(lua, false);
+        let _: Option<()> = luaOb.exec_func("test2");
+        1
+    }
+    lua.register("testRust", testRust);
+    let _: Option<()> = lua.exec_string(func);
+    let ret: Option<i32> = lua.exec_string("return test();");
+    assert_eq!(ret.unwrap(), 6);
 }

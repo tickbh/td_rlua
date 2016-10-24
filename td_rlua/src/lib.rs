@@ -212,6 +212,28 @@ impl Lua {
         }
     }
 
+    pub fn exec_func<'a, I, R>(&'a mut self, index : I) -> Option<R>
+                            where I: Borrow<str>, R : LuaRead
+    {
+        let index = CString::new(index.borrow()).unwrap();
+        println!("index");
+        unsafe {
+            let state = self.state();
+            let error = CString::new("error_handle").unwrap();
+            let top = td_clua::lua_gettop(state);
+            td_clua::lua_getglobal(state, index.as_ptr());
+            td_clua::lua_insert(state, -top - 1);
+            td_clua::lua_getglobal(state, error.as_ptr());
+            td_clua::lua_insert(state, -top - 2);
+            let success = td_clua::lua_pcall(state, top, 1, -top-2);
+            if success != 0 {
+                td_clua::lua_pop(state, 1);
+                return None;
+            }
+            LuaRead::lua_read(state)
+        }
+    }
+
     /// Inserts an empty table, then loads it.
     pub fn empty_table<I>(&mut self, index: I) -> LuaTable
                               where I: Borrow<str>
