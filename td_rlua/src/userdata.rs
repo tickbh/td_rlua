@@ -120,7 +120,7 @@ pub fn push_userdata<'a, T, F>(data: &'a mut T,
             td_clua::lua_pushlightuserdata(lua, mem::transmute(destructor_impl));
 
             // pushing destructor_wrapper as a closure
-            td_clua::lua_pushcclosure(lua, mem::transmute(destructor_wrapper), 1);
+            td_clua::lua_pushcclosure(lua, mem::transmute(destructor_wrapper as extern "C" fn(*mut td_clua::lua_State) -> i32), 1);
 
             td_clua::lua_settable(lua, -3);
         }
@@ -264,7 +264,7 @@ impl<T> LuaStruct<T>
                     td_clua::lua_pushlightuserdata(self.lua, mem::transmute(destructor_impl));
 
                     // pushing destructor_wrapper as a closure
-                    td_clua::lua_pushcclosure(self.lua, mem::transmute(destructor_wrapper), 1);
+                    td_clua::lua_pushcclosure(self.lua, mem::transmute(destructor_wrapper as extern "C" fn(*mut td_clua::lua_State) -> i32), 1);
 
                     td_clua::lua_settable(self.lua, -3);
                 }
@@ -296,7 +296,7 @@ impl<T> LuaStruct<T>
 
                     // pushing destructor_wrapper as a closure
                     td_clua::lua_pushcclosure(self.lua,
-                                              mem::transmute(constructor_light_wrapper),
+                                              mem::transmute(constructor_light_wrapper as extern "C" fn(*mut td_clua::lua_State) -> i32),
                                               1);
                     td_clua::lua_settable(self.lua, -3);
                 } else {
@@ -306,7 +306,7 @@ impl<T> LuaStruct<T>
                     td_clua::lua_pushlightuserdata(self.lua, mem::transmute(constructor_impl));
 
                     // pushing destructor_wrapper as a closure
-                    td_clua::lua_pushcclosure(self.lua, mem::transmute(constructor_wrapper), 1);
+                    td_clua::lua_pushcclosure(self.lua, mem::transmute(constructor_wrapper as extern "C" fn(*mut td_clua::lua_State) -> i32), 1);
                     td_clua::lua_settable(self.lua, -3);
                 }
 
