@@ -2,11 +2,6 @@ extern crate pkg_config;
 extern crate gcc;
 
 fn main() {
-    match pkg_config::find_library("lua5.2") {
-        Ok(_) => return,
-        Err(..) => {}
-    };
-
     gcc::Config::new()
         .file("lua/src/lapi.c")
         .file("lua/src/lcode.c")
