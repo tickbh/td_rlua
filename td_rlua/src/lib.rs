@@ -216,7 +216,6 @@ impl Lua {
                             where I: Borrow<str>, R : LuaRead
     {
         let index = CString::new(index.borrow()).unwrap();
-        println!("index");
         unsafe {
             let state = self.state();
             let error = CString::new("error_handle").unwrap();
