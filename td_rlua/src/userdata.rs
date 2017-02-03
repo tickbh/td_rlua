@@ -22,7 +22,7 @@ extern "C" fn destructor_wrapper(lua: *mut td_clua::lua_State) -> libc::c_int {
 fn destructor_impl<T>(lua: *mut td_clua::lua_State) -> libc::c_int {
     let obj = unsafe { td_clua::lua_touserdata(lua, -1) };
     let obj: &mut T = unsafe { mem::transmute(obj) };
-    mem::replace(obj, unsafe { mem::uninitialized() });
+    unsafe { drop(Box::from_raw(obj)) };
     0
 }
 
@@ -35,15 +35,22 @@ extern "C" fn constructor_wrapper(lua: *mut td_clua::lua_State) -> libc::c_int {
 fn constructor_impl<T>(lua: *mut td_clua::lua_State) -> libc::c_int
     where T: NewStruct + Any
 {
-    let t = Box::into_raw(Box::new(T::new()));
-    let lua_data_raw = unsafe {
-        td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t)
-    };
-    let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
-    unsafe { ptr::copy_nonoverlapping(t, lua_data, 1) };
+    // let t = Box::into_raw(Box::new(T::new()));
+    // let lua_data_raw = unsafe {
+    //     td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t)
+    // };
+    // let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
+    // unsafe { ptr::copy_nonoverlapping(t, lua_data, 1) };
+    // unsafe {
+    //     drop(Box::from_raw(t));
+    // }
+
+    let t = T::new();
     unsafe {
-        drop(Box::from_raw(t));
-    }
+        let lua_data = td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t);
+        let lua_data: *mut T = mem::transmute(lua_data);
+        ptr::write(lua_data, t);
+    };
 
     let typeid = CString::new(T::name()).unwrap();
     unsafe {
