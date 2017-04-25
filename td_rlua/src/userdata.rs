@@ -22,7 +22,7 @@ extern "C" fn destructor_wrapper(lua: *mut td_clua::lua_State) -> libc::c_int {
 fn destructor_impl<T>(lua: *mut td_clua::lua_State) -> libc::c_int {
     let obj = unsafe { td_clua::lua_touserdata(lua, -1) };
     let obj: &mut T = unsafe { mem::transmute(obj) };
-    unsafe { drop(Box::from_raw(obj)) };
+    mem::replace(obj, unsafe { mem::uninitialized() });
     0
 }
 

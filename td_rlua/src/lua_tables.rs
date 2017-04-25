@@ -68,7 +68,7 @@ impl LuaTable {
                                I: LuaPush
     {
         index.push_to_lua(self.table);
-        unsafe { td_clua::lua_gettable(self.table, self.index - 1); }
+        unsafe { td_clua::lua_gettable(self.table, if self.index > 0 { self.index } else {self.index - 1}); }
         let _guard = LuaGuard::new(self.table, 1);
         LuaRead::lua_read_with_pop(self.table, -1, 1)
     }
@@ -80,7 +80,7 @@ impl LuaTable {
     {
         index.push_to_lua(self.table);
         value.push_to_lua(self.table);
-        unsafe { td_clua::lua_settable(self.table, self.index - 2); }
+        unsafe { td_clua::lua_settable(self.table, if self.index > 0 { self.index } else {self.index - 2}); }
     }
 
     /// Inserts or modifies an elements of the table.
@@ -90,7 +90,7 @@ impl LuaTable {
         index.push_to_lua(self.table);
         unsafe {
             td_clua::lua_pushcfunction(self.table, func);
-            td_clua::lua_settable(self.table, self.index - 2);
+            td_clua::lua_settable(self.table, if self.index > 0 { self.index } else {self.index - 2});
         }
     }
 
@@ -102,7 +102,7 @@ impl LuaTable {
         index.clone().push_to_lua(self.table);
         unsafe { 
             td_clua::lua_newtable(self.table);
-            td_clua::lua_settable(self.table, self.index - 2); 
+            td_clua::lua_settable(self.table, if self.index > 0 { self.index } else {self.index - 2}); 
         }
         self.query(index).unwrap()
     }

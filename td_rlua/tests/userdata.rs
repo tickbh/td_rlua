@@ -127,9 +127,12 @@ fn get_set_test() {
         a : i32,
     };
 
-    impl<'a> td_rlua::LuaPush for &'a mut  Foo {
+    impl td_rlua::LuaPush for Foo {
         fn push_to_lua(self, lua: *mut lua_State) -> i32 {
-            td_rlua::userdata::push_userdata(self, lua, |_|{})
+            let t = Box::into_raw(Box::new(self));
+            unsafe {
+                td_rlua::userdata::push_userdata::<Foo, _>(::std::mem::transmute(&mut *t), lua, |_|{})
+            }
         }
     }
     impl<'a> td_rlua::LuaRead for &'a mut  Foo {
@@ -138,7 +141,7 @@ fn get_set_test() {
         }
     }
 
-    let xx  = &mut Foo {
+    let xx = Foo {
         a : 10,
     };
     lua.set("a", xx);
