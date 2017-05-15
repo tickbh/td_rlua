@@ -56,6 +56,9 @@ pub fn load_hot_fix(lua: &mut Lua) {
             end
 
             function update_func(env_f, g_f, name, deep)
+                local signature = tostring(env_f)..tostring(g_f)
+                if visited_sig[signature] then return end
+                visited_sig[signature] = true
                 local old_upvalue_map = {}
                 for i = 1, math.huge do
                     local name, value = debug.getupvalue(g_f, i)
@@ -100,8 +103,7 @@ pub fn load_hot_fix(lua: &mut Lua) {
             local file_str
             local fp = io.open(name)
             if fp then
-                io.input(name)
-                file_str = io.read('*all')
+                file_str = fp:read('*all')
                 io.close(fp)
             end
 

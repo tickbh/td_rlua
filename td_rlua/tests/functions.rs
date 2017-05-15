@@ -2,7 +2,6 @@ extern crate td_rlua;
 extern crate libc;
 use td_rlua::Lua;
 use td_rlua::LuaTable;
-use td_rlua::LuaPush;
 
 #[test]
 fn basic() {
@@ -138,7 +137,6 @@ fn test_exec_func() {
         assert!(success == 0);
         assert_eq!(index, 8);
     }
-
     {
         let mut index = 5;
         lua.set("sub", td_rlua::function3(|a:i32, b:u32, _c : String| index -= (a + b as i32)));
@@ -167,12 +165,12 @@ fn test_exec_func_by_param() {
         end
     ";
 
-    extern "C" fn testRust(lua: *mut td_rlua::lua_State) -> libc::c_int {
-        let mut luaOb = Lua::from_existing_state(lua, false);
-        let _: Option<()> = luaOb.exec_func("test2");
+    extern "C" fn test_rust(lua: *mut td_rlua::lua_State) -> libc::c_int {
+        let mut lua_ob = Lua::from_existing_state(lua, false);
+        let _: Option<()> = lua_ob.exec_func("test2");
         1
     }
-    lua.register("testRust", testRust);
+    lua.register("testRust", test_rust);
     let _: Option<()> = lua.exec_string(func);
     let ret: Option<i32> = lua.exec_string("return test();");
     assert_eq!(ret.unwrap(), 6);
