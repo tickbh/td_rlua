@@ -1,6 +1,6 @@
 [package]
 name = "td_rlua"
-version = "0.1.8"
+version = "0.1.9"
 authors = [ "tickbh <tickdream125@hotmail.com>" ]
 description = "Zero-cost high-level lua 5.3 wrapper for Rust"
 repository = "https://github.com/tickbh/td_rlua"

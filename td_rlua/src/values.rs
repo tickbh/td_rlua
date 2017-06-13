@@ -65,9 +65,14 @@ numeric_impl!(f64);
 
 impl LuaPush for String {
     fn push_to_lua(self, lua: *mut lua_State) -> i32 {
-        let value = CString::new(&self[..]).unwrap();
-        unsafe { td_clua::lua_pushstring(lua, value.as_ptr()) };
-        1
+        if let Some(value) = CString::new(&self[..]).ok() {
+            unsafe { td_clua::lua_pushstring(lua, value.as_ptr()) };
+            1
+        } else {
+            let value = CString::new(&"UNVAILED STRING"[..]).unwrap();
+            unsafe { td_clua::lua_pushstring(lua, value.as_ptr()) };
+            1
+        }
     }
 }
 

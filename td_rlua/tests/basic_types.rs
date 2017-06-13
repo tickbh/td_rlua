@@ -84,12 +84,17 @@ fn readwrite_strings() {
 
     lua.set("a", "hello");
     lua.set("b", "hello".to_string());
+    let unvaild = String::from_utf8_lossy(&[8, 0, 34, 0, 3, 0, 58, 0, 0, 0, 33, 0, 40, 0, 34, 0, 3, 0, 26, 0, 0, 0, 34, 0, 127, 0, 35, 0, 0, 0, 35, 0, 14]).to_string();
+    lua.set("c", unvaild);
 
     let x: String = lua.query("a").unwrap();
     assert_eq!(x, "hello");
 
     let y: String = lua.query("b").unwrap();
     assert_eq!(y, "hello");
+
+    let z: String = lua.query("c").unwrap();
+    assert_eq!(z, "UNVAILED STRING");
 }
 
 #[test]
