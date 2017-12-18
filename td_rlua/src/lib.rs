@@ -293,6 +293,10 @@ impl Lua {
         hotfix::load_hot_fix(self);
     }
 
+    pub fn exec_gc(&mut self) -> i32 {
+        unsafe { td_clua::lua_gc(self.state(), td_clua::LUA_GCCOLLECT, 0) as i32 } 
+    }
+
     impl_exec_func!(exec_func0, );
     impl_exec_func!(exec_func1, A);
     impl_exec_func!(exec_func2, A, B);

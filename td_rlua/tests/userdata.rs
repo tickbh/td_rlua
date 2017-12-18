@@ -10,7 +10,7 @@ use td_rlua::NewStruct;
 fn readwrite() {
     #[derive(Clone)]
     struct Foo;
-    impl<'a> LuaPush for &'a mut  Foo {
+    impl<'a> LuaPush for Foo {
         fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
@@ -23,7 +23,7 @@ fn readwrite() {
 
     let mut lua = Lua::new();
 
-    lua.set("a", &mut Foo);
+    lua.set("a", Foo{});
     let _: &mut Foo = lua.query("a").unwrap();
 }
 
@@ -44,7 +44,7 @@ fn destructor_called() {
         }
     }
 
-    impl<'a> LuaPush for &'a mut Foo {
+    impl<'a> LuaPush for Foo {
         fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
@@ -52,7 +52,7 @@ fn destructor_called() {
 
     {
         let mut lua = Lua::new();
-        lua.set("a", &mut Foo{called: called.clone()});
+        lua.set("a", Foo { called: called.clone() });
     }
 
     let locked = called.lock().unwrap();
@@ -63,7 +63,7 @@ fn destructor_called() {
 fn type_check() {
     #[derive(Clone)]
     struct Foo;
-    impl<'a> LuaPush for &'a mut Foo {
+    impl<'a> LuaPush for Foo {
         fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
@@ -76,7 +76,7 @@ fn type_check() {
 
     #[derive(Clone)]
     struct Bar;
-    impl<'a> LuaPush for &'a mut Bar {
+    impl<'a> LuaPush for Bar {
         fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
@@ -89,7 +89,7 @@ fn type_check() {
 
     let mut lua = Lua::new();
 
-    lua.set("a", &mut Foo);
+    lua.set("a", Foo);
     
     let x: Option<&mut Bar> = lua.query("a");
     assert!(x.is_none())
@@ -99,7 +99,7 @@ fn type_check() {
 fn metatables() {
     #[derive(Clone)]
     struct Foo;
-    impl<'a> LuaPush for &'a mut Foo {
+    impl<'a> LuaPush for Foo {
         fn push_to_lua(self, lua: *mut lua_State) -> i32 {
             td_rlua::userdata::push_userdata(self, lua, |mut table| {
                 table.set("__index".to_string(), vec![
@@ -112,7 +112,7 @@ fn metatables() {
 
     let mut lua = Lua::new();
 
-    lua.set("a", &mut Foo);
+    lua.set("a", Foo);
 
     let x: i32 = lua.exec_string("return a.test1(5)").unwrap();
     assert_eq!(x, 5);
@@ -127,12 +127,9 @@ fn get_set_test() {
         a : i32,
     };
 
-    impl td_rlua::LuaPush for Foo {
+    impl<'a> td_rlua::LuaPush for Foo {
         fn push_to_lua(self, lua: *mut lua_State) -> i32 {
-            let t = Box::into_raw(Box::new(self));
-            unsafe {
-                td_rlua::userdata::push_userdata::<Foo, _>(::std::mem::transmute(&mut *t), lua, |_|{})
-            }
+            td_rlua::userdata::push_userdata(self, lua, |_|{})
         }
     }
     impl<'a> td_rlua::LuaRead for &'a mut  Foo {
@@ -141,7 +138,7 @@ fn get_set_test() {
         }
     }
 
-    let xx = Foo {
+    let xx  = Foo {
         a : 10,
     };
     lua.set("a", xx);

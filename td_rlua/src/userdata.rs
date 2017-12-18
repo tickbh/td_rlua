@@ -13,45 +13,25 @@ use LuaPush;
 use LuaRead;
 use LuaTable;
 
-extern "C" fn destructor_wrapper(lua: *mut td_clua::lua_State) -> libc::c_int {
-    let impl_raw = unsafe { td_clua::lua_touserdata(lua, td_clua::lua_upvalueindex(1)) };
-    let imp: fn(*mut td_clua::lua_State) -> ::libc::c_int = unsafe { mem::transmute(impl_raw) };
-    imp(lua)
-}
-
-fn destructor_impl<T>(lua: *mut td_clua::lua_State) -> libc::c_int {
-    let obj = unsafe { td_clua::lua_touserdata(lua, -1) };
-    let obj: &mut T = unsafe { mem::transmute(obj) };
-    mem::replace(obj, unsafe { mem::uninitialized() });
-    0
-}
-
-extern "C" fn constructor_wrapper(lua: *mut td_clua::lua_State) -> libc::c_int {
-    let impl_raw = unsafe { td_clua::lua_touserdata(lua, td_clua::lua_upvalueindex(1)) };
-    let imp: fn(*mut td_clua::lua_State) -> ::libc::c_int = unsafe { mem::transmute(impl_raw) };
-    imp(lua)
-}
-
-fn constructor_impl<T>(lua: *mut td_clua::lua_State) -> libc::c_int
-    where T: NewStruct + Any
-{
-    // let t = Box::into_raw(Box::new(T::new()));
-    // let lua_data_raw = unsafe {
-    //     td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t)
-    // };
-    // let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
-    // unsafe { ptr::copy_nonoverlapping(t, lua_data, 1) };
-    // unsafe {
-    //     drop(Box::from_raw(t));
-    // }
-
-    let t = T::new();
+// Called when an object inside Lua is being dropped.
+#[inline]
+extern "C" fn destructor_wrapper<T>(lua: *mut td_clua::lua_State) -> libc::c_int {
     unsafe {
-        let lua_data = td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t);
-        let lua_data: *mut T = mem::transmute(lua_data);
-        ptr::write(lua_data, t);
-    };
+        let obj = td_clua::lua_touserdata(lua, -1);
+        ptr::drop_in_place(obj as *mut T);
+        0
+    }
+}
 
+extern "C" fn constructor_wrapper<T>(lua: *mut td_clua::lua_State) -> libc::c_int
+    where T: NewStruct + Any {
+    let t = T::new();
+    let lua_data_raw = unsafe {
+        td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t)
+    };
+    unsafe {
+        ptr::write(lua_data_raw as *mut _, t);
+    }
     let typeid = CString::new(T::name()).unwrap();
     unsafe {
         td_clua::lua_getglobal(lua, typeid.as_ptr());
@@ -63,15 +43,8 @@ fn constructor_impl<T>(lua: *mut td_clua::lua_State) -> libc::c_int
 // constructor direct create light object,
 // in rust we alloc the memory, avoid copy the memory
 // in lua we get the object, we must free the memory
-extern "C" fn constructor_light_wrapper(lua: *mut td_clua::lua_State) -> libc::c_int {
-    let impl_raw = unsafe { td_clua::lua_touserdata(lua, td_clua::lua_upvalueindex(1)) };
-    let imp: fn(*mut td_clua::lua_State) -> ::libc::c_int = unsafe { mem::transmute(impl_raw) };
-    imp(lua)
-}
-
-fn constructor_light_impl<T>(lua: *mut td_clua::lua_State) -> libc::c_int
-    where T: NewStruct + Any
-{
+extern "C" fn constructor_light_wrapper<T>(lua: *mut td_clua::lua_State) -> libc::c_int 
+    where T: NewStruct + Any {
     let t = Box::into_raw(Box::new(T::new()));
     push_lightuserdata(unsafe { &mut *t }, lua, |_| {});
     let typeid = CString::new(T::name()).unwrap();
@@ -94,7 +67,7 @@ fn constructor_light_impl<T>(lua: *mut td_clua::lua_State) -> libc::c_int
 ///
 ///  - `metatable`: Function that fills the metatable of the object.
 ///
-pub fn push_userdata<'a, T, F>(data: &'a mut T,
+pub fn push_userdata<'a, T, F>(data: T,
                                lua: *mut td_clua::lua_State,
                                mut metatable: F)
                                -> i32
@@ -105,11 +78,11 @@ pub fn push_userdata<'a, T, F>(data: &'a mut T,
     let lua_data_raw = unsafe {
         td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t)
     };
-    let lua_data: *mut T = unsafe { mem::transmute(lua_data_raw) };
-    unsafe { ptr::copy_nonoverlapping(data, lua_data, 1) };
 
     // creating a metatable
     unsafe {
+        
+        ptr::write(lua_data_raw as *mut _, data);
 
         td_clua::lua_newtable(lua);
 
@@ -122,12 +95,7 @@ pub fn push_userdata<'a, T, F>(data: &'a mut T,
         {
             "__gc".push_to_lua(lua);
 
-            // pushing destructor_impl as a lightuserdata
-            let destructor_impl: fn(*mut td_clua::lua_State) -> libc::c_int = destructor_impl::<T>;
-            td_clua::lua_pushlightuserdata(lua, mem::transmute(destructor_impl));
-
-            // pushing destructor_wrapper as a closure
-            td_clua::lua_pushcclosure(lua, mem::transmute(destructor_wrapper as extern "C" fn(*mut td_clua::lua_State) -> i32), 1);
+            td_clua::lua_pushcfunction(lua, destructor_wrapper::<T>);
 
             td_clua::lua_settable(lua, -3);
         }
@@ -264,14 +232,8 @@ impl<T> LuaStruct<T>
                 // index "__gc" call the object's destructor
                 if !self.light {
                     "__gc".push_to_lua(self.lua);
-
-                    // pushing destructor_impl as a lightuserdata
-                    let destructor_impl: fn(*mut td_clua::lua_State) -> libc::c_int =
-                        destructor_impl::<T>;
-                    td_clua::lua_pushlightuserdata(self.lua, mem::transmute(destructor_impl));
-
-                    // pushing destructor_wrapper as a closure
-                    td_clua::lua_pushcclosure(self.lua, mem::transmute(destructor_wrapper as extern "C" fn(*mut td_clua::lua_State) -> i32), 1);
+                    
+                    td_clua::lua_pushcfunction(self.lua, destructor_wrapper::<T>);
 
                     td_clua::lua_settable(self.lua, -3);
                 }
@@ -296,24 +258,10 @@ impl<T> LuaStruct<T>
                 "__call".push_to_lua(self.lua);
 
                 if self.light {
-                    // pushing destructor_impl as a lightuserdata
-                    let constructor_impl: fn(*mut td_clua::lua_State) -> libc::c_int =
-                        constructor_light_impl::<T>;
-                    td_clua::lua_pushlightuserdata(self.lua, mem::transmute(constructor_impl));
-
-                    // pushing destructor_wrapper as a closure
-                    td_clua::lua_pushcclosure(self.lua,
-                                              mem::transmute(constructor_light_wrapper as extern "C" fn(*mut td_clua::lua_State) -> i32),
-                                              1);
+                    td_clua::lua_pushcfunction(self.lua, constructor_light_wrapper::<T>);
                     td_clua::lua_settable(self.lua, -3);
                 } else {
-                    // pushing destructor_impl as a lightuserdata
-                    let constructor_impl: fn(*mut td_clua::lua_State) -> libc::c_int =
-                        constructor_impl::<T>;
-                    td_clua::lua_pushlightuserdata(self.lua, mem::transmute(constructor_impl));
-
-                    // pushing destructor_wrapper as a closure
-                    td_clua::lua_pushcclosure(self.lua, mem::transmute(constructor_wrapper as extern "C" fn(*mut td_clua::lua_State) -> i32), 1);
+                    td_clua::lua_pushcfunction(self.lua, constructor_wrapper::<T>);
                     td_clua::lua_settable(self.lua, -3);
                 }
 
