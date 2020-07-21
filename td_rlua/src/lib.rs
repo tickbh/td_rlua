@@ -279,7 +279,7 @@ impl Lua {
         }
 
         let short_name = CString::new(short_name).unwrap();
-        let ret = unsafe { td_clua::luaL_loadbuffer(self.state(), buffer.as_ptr() as *const u8, buffer.len(), short_name.as_ptr()) };
+        let ret = unsafe { td_clua::luaL_loadbuffer(self.state(), buffer.as_ptr() as *const libc::c_char, buffer.len(), short_name.as_ptr()) };
         if ret != 0 {
             let err_msg : String = unwrap_or!(LuaRead::lua_read(self.state()), return 0);
             let err_detail = CString::new(format!("error loading from file {} :\n\t{}", file_name, err_msg)).unwrap();
