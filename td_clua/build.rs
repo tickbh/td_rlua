@@ -2,8 +2,9 @@ extern crate pkg_config;
 extern crate gcc;
 
 fn main() {
-    gcc::Config::new()
-        .file("lua/src/lapi.c")
+    let mut build = gcc::Config::new();
+
+        build.file("lua/src/lapi.c")
         .file("lua/src/lcode.c")
         .file("lua/src/lctype.c")
         .file("lua/src/ldebug.c")
@@ -39,8 +40,18 @@ fn main() {
         .define("LUA_COMPAT_ALL", None)
         .define("LUA_COMPAT_MODULE", None)
         .define("LUA_COMPAT_BITLIB", None)
-        .define("LUA_COMPAT_LOADSTRING", None)
+        .define("LUA_COMPAT_LOADSTRING", None);
+
+    if cfg!(windows) {
+        build.define("LUA_USE_WINDOWS", "1");
+    }
+    if cfg!(unix) {
+        build.define("LUA_USE_LINUX", "1");
+    }
+    if cfg!(macos) {
+        build.define("LUA_USE_MACOSX", "1");
+    }
         
-        .include("lua/src")
+        build.include("lua/src")
         .compile("liblua.a");
 }
