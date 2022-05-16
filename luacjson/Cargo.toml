@@ -1,6 +1,6 @@
 [package]
 name = "luacjson"
-version = "0.1.0"
+version = "0.1.2"
 authors = [ "tickbh <tickdream125@hotmail.com>" ]
 description = "extend for Lua 5.3"
 repository = "https://github.com/tickbh/td_rlua"
