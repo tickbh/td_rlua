@@ -113,14 +113,14 @@ impl Lua {
         extern "C" fn panic(lua: *mut td_clua::lua_State) -> libc::c_int {
             let err = unsafe { td_clua::lua_tostring(lua, -1) };
             let err = unsafe { CStr::from_ptr(err) };
-            let err = String::from_utf8(err.to_bytes().to_vec()).unwrap();
+            let err = String::from_utf8_lossy(&err.to_bytes());
             panic!("PANIC: unprotected error in call to Lua API ({})\n", err);
         }
 
         extern "C" fn error_handle(lua: *mut td_clua::lua_State) -> libc::c_int {
             let err = unsafe { td_clua::lua_tostring(lua, -1) };
             let err = unsafe { CStr::from_ptr(err) };
-            let err = String::from_utf8(err.to_bytes().to_vec()).unwrap();
+            let err = String::from_utf8_lossy(&err.to_bytes());
             println!("error:{}", err);
             0
         }
