@@ -1,11 +1,11 @@
 [package]
-name = "luasocket"
-version = "0.1.4"
-authors = ["tickbh"]
-description = "luasocket Bindings for Lua 5.3"
+name = "luacjson"
+version = "0.1.0"
+authors = [ "tickbh <tickdream125@hotmail.com>" ]
+description = "extend for Lua 5.3"
 repository = "https://github.com/tickbh/td_rlua"
 build = "build.rs"
-links = "luasocket"
+links = "luacjson"
 license = "MIT/Apache-2.0"
 
 [build-dependencies]
