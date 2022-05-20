@@ -1,6 +1,6 @@
 [package]
 name = "luasocket"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["tickbh"]
 description = "luasocket Bindings for Lua 5.3"
 repository = "https://github.com/tickbh/td_rlua"

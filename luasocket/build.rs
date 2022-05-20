@@ -4,6 +4,10 @@ extern crate gcc;
 fn main() {
     let mut build = gcc::Build::new();
 
+    if cfg!(linux) || cfg!(macos) {
+        build.file("luasocket/src/wsocket.c");
+    }
+
         build.file("luasocket/src/auxiliar.c")
         .file("luasocket/src/buffer.c")
         .file("luasocket/src/compat.c")
@@ -16,7 +20,6 @@ fn main() {
         .file("luasocket/src/tcp.c")
         .file("luasocket/src/timeout.c")
         .file("luasocket/src/udp.c")
-        .file("luasocket/src/wsocket.c")
         .include("include")
         .include("luasocket/src");
 
