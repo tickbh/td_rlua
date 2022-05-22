@@ -4,7 +4,14 @@ extern crate gcc;
 fn main() {
     let mut build = gcc::Build::new();
 
-    if cfg!(linux) || cfg!(macos) {
+    if cfg!(unix) {
+        build.file("luasocket/src/usocket.c");
+        build.file("luasocket/src/unix.c");
+        build.file("luasocket/src/unixdgram.c");
+        build.file("luasocket/src/unixstream.c");
+    }
+
+    if cfg!(windows) {
         build.file("luasocket/src/wsocket.c");
     }
 
