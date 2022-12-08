@@ -96,6 +96,34 @@ macro_rules! impl_exec_func {
     )
 }
 
+
+macro_rules! impl_read_func {
+    ($name:ident, $($p:ident),*) => (
+        #[allow(non_snake_case, unused_mut)]
+        pub fn $name<'a, Z, R, $($p),*>(&'a mut self, func_name : Z, $($p : $p, )*) -> Option<R> where Z: Borrow<str>, R : LuaRead, $($p : LuaPush),* {
+            let func_name = CString::new(func_name.borrow()).unwrap();
+            unsafe {
+                let state = self.state();
+                let error = CString::new("error_handle").unwrap();
+                lua_getglobal(state, error.as_ptr());
+                td_clua::lua_getglobal(state, func_name.as_ptr());
+
+                let mut index = 0;
+                $(
+                    index += $p.push_to_lua(self.state());
+                )*
+
+                let success = td_clua::lua_pcall(state, index, 0, -1 * index - 2);
+                if success != 0 {
+                    td_clua::lua_pop(state, 1);
+                    return None;
+                }
+                LuaRead::lua_read(state)
+            }
+        }
+    )
+}
+
 impl Lua {
     /// Builds a new Lua context.
     ///
@@ -308,6 +336,19 @@ impl Lua {
     impl_exec_func!(exec_func8, A, B, C, D, E, F, G, H);
     impl_exec_func!(exec_func9, A, B, C, D, E, F, G, H, I);
     impl_exec_func!(exec_func10, A, B, C, D, E, F, G, H, I, J);
+
+
+    impl_read_func!(read_func0, );
+    impl_read_func!(read_func1, A);
+    impl_read_func!(read_func2, A, B);
+    impl_read_func!(read_func3, A, B, C);
+    impl_read_func!(read_func4, A, B, C, D);
+    impl_read_func!(read_func5, A, B, C, D, E);
+    impl_read_func!(read_func6, A, B, C, D, E, F);
+    impl_read_func!(read_func7, A, B, C, D, E, F, G);
+    impl_read_func!(read_func8, A, B, C, D, E, F, G, H);
+    impl_read_func!(read_func9, A, B, C, D, E, F, G, H, I);
+    impl_read_func!(read_func10, A, B, C, D, E, F, G, H, I, J);
 
 }
 
