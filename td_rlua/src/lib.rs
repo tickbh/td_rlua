@@ -113,7 +113,7 @@ macro_rules! impl_read_func {
                     index += $p.push_to_lua(self.state());
                 )*
 
-                let success = td_clua::lua_pcall(state, index, 0, -1 * index - 2);
+                let success = td_clua::lua_pcall(state, index, 1, -1 * index - 2);
                 if success != 0 {
                     td_clua::lua_pop(state, 1);
                     return None;
