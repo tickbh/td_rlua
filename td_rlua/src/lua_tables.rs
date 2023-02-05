@@ -5,7 +5,7 @@ use libc;
 use td_clua::{self, lua_State};
 use LuaPush;
 use LuaRead;
-use LuaGuard;
+
 /// Represents a table stored in the Lua context.
 ///
 /// Loading this type mutably borrows the Lua context.
@@ -16,7 +16,7 @@ pub struct LuaTable {
 }
 
 impl LuaRead for LuaTable {
-    fn lua_read_with_pop(lua: *mut lua_State, index: i32, pop: i32) -> Option<LuaTable> {
+    fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, pop: i32) -> Option<LuaTable> {
         if unsafe { td_clua::lua_istable(lua, index) } {
             for _ in 0 .. pop {
                 unsafe { td_clua::lua_pushnil(lua); }
@@ -69,7 +69,6 @@ impl LuaTable {
     {
         index.push_to_lua(self.table);
         unsafe { td_clua::lua_gettable(self.table, if self.index > 0 { self.index } else {self.index - 1}); }
-        let _guard = LuaGuard::new(self.table, 1);
         LuaRead::lua_read_with_pop(self.table, -1, 1)
     }
 

@@ -59,21 +59,27 @@ fn table_over_table() {
 
     let _:() = lua.exec_string("a = { 10, { 8, 7 }, 6 }").unwrap();
     let mut table : LuaTable = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 1);
 
     let x: i32 = table.query(1).unwrap();
+    assert_eq!(lua.get_top(), 1);
     assert_eq!(x, 10);
 
     {
         let mut subtable : LuaTable = table.query(2).unwrap();
 
+        assert_eq!(lua.get_top(), 2);
         let y: i32 = subtable.query(1).unwrap();
+        assert_eq!(lua.get_top(), 2);
         assert_eq!(y, 8);
 
         let z: i32 = subtable.query(2).unwrap();
+        assert_eq!(lua.get_top(), 2);
         assert_eq!(z, 7);
     }
 
     let w: i32 = table.query(3).unwrap();
+    assert_eq!(lua.get_top(), 1);
     assert_eq!(w, 6);
 }
 
@@ -86,12 +92,14 @@ fn metatable() {
     {
         let mut table : LuaTable = lua.query("a").unwrap();
 
+        assert_eq!(lua.get_top(), 1);
         let mut metatable = table.get_or_create_metatable();
-        fn handler() -> i32 { 5 };
+        fn handler() -> i32 { 5 }
         metatable.set("__add".to_string(), td_rlua::function0(handler));
     }
 
     let r: i32 = lua.exec_string("return a + a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(r, 5);
 }
 
@@ -101,9 +109,11 @@ fn empty_array() {
 
     {
         let mut array = lua.empty_table("a");
+        assert_eq!(lua.get_top(), 1);
         array.set("b", 3)
     }
 
     let mut table: LuaTable = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 1);
     assert!(3 == table.query("b").unwrap());
 }

@@ -16,7 +16,7 @@ fn readwrite() {
         }
     }
     impl<'a> LuaRead for &'a mut Foo {
-        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
+        fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -25,6 +25,7 @@ fn readwrite() {
 
     lua.set("a", Foo{});
     let _: &mut Foo = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
 }
 
 #[test]
@@ -69,7 +70,7 @@ fn type_check() {
         }
     }
     impl<'a> LuaRead for &'a mut Foo {
-        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
+        fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -82,7 +83,7 @@ fn type_check() {
         }
     }
     impl<'a> LuaRead for &'a mut Bar {
-        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Bar> {
+        fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Bar> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -92,6 +93,7 @@ fn type_check() {
     lua.set("a", Foo);
     
     let x: Option<&mut Bar> = lua.query("a");
+    assert_eq!(lua.get_top(), 0);
     assert!(x.is_none())
 }
 
@@ -115,6 +117,8 @@ fn metatables() {
     lua.set("a", Foo);
 
     let x: i32 = lua.exec_string("return a.test1(5)").unwrap();
+
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(x, 5);
 }
 
@@ -125,7 +129,7 @@ fn get_set_test() {
     #[derive(Clone, Debug)]
     struct Foo {
         a : i32,
-    };
+    }
 
     impl<'a> td_rlua::LuaPush for Foo {
         fn push_to_lua(self, lua: *mut lua_State) -> i32 {
@@ -133,7 +137,7 @@ fn get_set_test() {
         }
     }
     impl<'a> td_rlua::LuaRead for &'a mut  Foo {
-        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
+        fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut Foo> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
@@ -143,10 +147,12 @@ fn get_set_test() {
     };
     lua.set("a", xx);
     let get: &mut Foo = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert!(get.a == 10);
     get.a = 100;
 
     let get: &mut Foo = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert!(get.a == 100);
 }
 
@@ -179,29 +185,44 @@ fn custom_struct() {
     }
 
     impl<'a> LuaRead for &'a mut TestLuaSturct {
-        fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut TestLuaSturct> {
+        fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<&'a mut TestLuaSturct> {
             td_rlua::userdata::read_userdata(lua, index)
         }
     }
 
     let mut lua = Lua::new();
     lua.openlibs();
-    fn one_arg(obj : &mut TestLuaSturct) -> i32 { obj.index = 10; 5 };
-    fn two_arg(obj : &mut TestLuaSturct, index : i32) { obj.index = index;};
+    fn one_arg(obj : &mut TestLuaSturct) -> i32 { obj.index = 10; 5 }
+    fn two_arg(obj : &mut TestLuaSturct, index : i32) { obj.index = index;}
 
     let mut value = td_rlua::LuaStruct::<TestLuaSturct>::new(lua.state());
     value.create().def("one_arg", td_rlua::function1(one_arg)).def("two_arg", td_rlua::function2(two_arg));
     
     let _ : Option<()> = lua.exec_string("x = TestLuaSturct()");
+
+    assert_eq!(lua.get_top(), 0);
     let val : Option<i32> = lua.exec_string("return x:one_arg()");
+
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, Some(5));
     let obj : Option<&mut TestLuaSturct> = lua.query("x");
+
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(obj.unwrap().index, 10);
     let val : Option<i32> = lua.exec_string("x:two_arg(121)");
+
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, None);
     let obj : Option<&mut TestLuaSturct> = lua.query("x");
+
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(obj.unwrap().index, 121);
 
     let obj : Option<&mut TestLuaSturct> = lua.exec_string("return TestLuaSturct()");
+
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(obj.unwrap().index, 19);
+
+    let _obj : Option<&mut TestLuaSturct> = lua.query("x1");
+    assert_eq!(lua.get_top(), 0);
 }

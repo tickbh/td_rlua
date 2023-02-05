@@ -9,27 +9,35 @@ fn read_i32s() {
     lua.set("a", 2);
 
     let x: i32 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(x, 2);
 
     let y: i8 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(y, 2);
 
     let z: i16 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(z, 2);
 
     let w: i32 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(w, 2);
 
     let a: u32 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(a, 2);
 
     let b: u8 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(b, 2);
 
     let c: u16 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(c, 2);
 
     let d : () = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(d, ());
 }
 
@@ -41,6 +49,7 @@ fn write_i32s() {
 
     lua.set("a", 2);
     let x: i32 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(x, 2);
 }
 
@@ -52,15 +61,19 @@ fn readwrite_floats() {
     lua.set("b", 3.4123456789 as f64);
 
     let x: f32 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert!(x - 2.51234 < 0.000001);
 
     let y: f64 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert!(y - 2.51234 < 0.000001);
 
     let z: f32 = lua.query("b").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert!(z - 3.4123456789 < 0.000001);
 
     let w: f64 = lua.query("b").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert!(w - 3.4123456789 < 0.000001);
 }
 
@@ -72,9 +85,11 @@ fn readwrite_bools() {
     lua.set("b", false);
 
     let x: bool = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(x, true);
 
     let y: bool = lua.query("b").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(y, false);
 }
 
@@ -88,12 +103,15 @@ fn readwrite_strings() {
     lua.set("c", unvaild);
 
     let x: String = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(x, "hello");
 
     let y: String = lua.query("b").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(y, "hello");
 
     let z: String = lua.query("c").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(z, "UNVAILED STRING");
 }
 
@@ -104,6 +122,7 @@ fn i32_to_string() {
     lua.set("a", 2);
 
     let x: String = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(x, "2");
 }
 
@@ -115,8 +134,10 @@ fn string_to_i32() {
     lua.set("b", "aaa");
 
     let x: i32 = lua.query("a").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(x, 2);
 
     let y: Option<i32> = lua.query("b");
+    assert_eq!(lua.get_top(), 0);
     assert!(y.is_none());
 }

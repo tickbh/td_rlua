@@ -209,7 +209,6 @@ impl Lua {
     {
         let index = CString::new(index.borrow()).unwrap();
         unsafe { td_clua::lua_getglobal(self.lua, index.as_ptr()); }
-        let _guard = LuaGuard::new(self.lua, 1);
         LuaRead::lua_read_with_pop(self.state(), -1, 1)
     }
 
@@ -233,10 +232,11 @@ impl Lua {
             td_clua::luaL_loadstring(state, index.as_ptr());
             let success = td_clua::lua_pcall(state, 0, 1, -2);
             if success != 0 {
-                td_clua::lua_pop(state, 1);
+                let _guard = LuaGuard::new(self.lua, 2);
                 return None;
             }
-            LuaRead::lua_read(state)
+            td_clua::lua_remove(state, -2);
+            LuaRead::lua_read_with_pop(state, -1, 1)
         }
     }
 
@@ -293,6 +293,56 @@ impl Lua {
             td_clua::lua_pop(state, 1);
         }
         0
+    }
+
+    pub fn get_top(&mut self) -> i32 {
+        unsafe {
+            td_clua::lua_gettop(self.state())
+        }
+    }
+
+    pub fn set_top(&mut self, top: i32) {
+        unsafe {
+            td_clua::lua_settop(self.state(), top)
+        }
+    }
+
+    pub fn get_luatype(&mut self, index: i32) -> i32 {
+        unsafe {
+            td_clua::lua_type(self.state(), index)
+        }
+    }
+
+    pub fn is_nil(&mut self, index: i32) -> bool {
+        self.get_luatype(index) == td_clua::LUA_TNIL
+    }
+
+    pub fn is_boolean(&mut self, index: i32) -> bool {
+        self.get_luatype(index) == td_clua::LUA_TBOOLEAN
+    }
+
+    pub fn is_lightuserdata(&mut self, index: i32) -> bool {
+        self.get_luatype(index) == td_clua::LUA_TLIGHTUSERDATA
+    }
+
+    pub fn is_number(&mut self, index: i32) -> bool {
+        self.get_luatype(index) == td_clua::LUA_TNUMBER
+    }
+
+    pub fn is_string(&mut self, index: i32) -> bool {
+        self.get_luatype(index) == td_clua::LUA_TSTRING
+    }
+
+    pub fn is_table(&mut self, index: i32) -> bool {
+        self.get_luatype(index) == td_clua::LUA_TTABLE
+    }
+
+    pub fn is_function(&mut self, index: i32) -> bool {
+        self.get_luatype(index) == td_clua::LUA_TFUNCTION
+    }
+
+    pub fn is_userdata(&mut self, index: i32) -> bool {
+        self.get_luatype(index) == td_clua::LUA_TUSERDATA
     }
 
     pub fn load_file(&mut self, file_name: &str) -> i32 {
@@ -381,7 +431,13 @@ pub trait LuaRead: Sized {
     }
 
     /// Reads the data from Lua at a given position.
-    fn lua_read_with_pop(lua: *mut lua_State, index: i32, pop: i32) -> Option<Self>;
+    fn lua_read_with_pop(lua: *mut lua_State, index: i32, pop: i32) -> Option<Self> {
+        let _guard = LuaGuard::new(lua, pop);
+        LuaRead::lua_read_with_pop_impl(lua, index, pop)
+    }
+
+    fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, pop: i32) -> Option<Self>;
+
 }
 
 impl Drop for Lua {
@@ -395,7 +451,8 @@ impl Drop for Lua {
 impl Drop for LuaGuard {
     fn drop(&mut self) {
         if self.size != 0 {
-            unsafe { td_clua::lua_pop(self.lua, self.size) }
+            unsafe { 
+                td_clua::lua_pop(self.lua, self.size) }
         }
     }
 }

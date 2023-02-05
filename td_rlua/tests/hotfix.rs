@@ -65,9 +65,11 @@ fn hotfix() {
         ");
 
     let val: i32 = lua.exec_string("return get_a()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 1);
 
     let val: i32 = lua.exec_string("return get_b()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 2);
 
     let _ = lua.exec_func2("hotfix", r"
@@ -84,12 +86,15 @@ fn hotfix() {
         ", "hotfix");
 
     let val: i32 = lua.exec_string("return get_b()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 2);
 
     let val: i32 = lua.exec_string("return get_a()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 1);
 
     let val: i32 = lua.exec_string("return get_b()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 3);
 }
 
@@ -177,6 +182,7 @@ fn hotfix_local_funcion() {
 
 
     let val: i32 = lua.exec_string("return CACHE_D.do_test()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 1);
 }
 
@@ -202,9 +208,11 @@ fn hotfix_module() {
         ");
 
     let val: i32 = lua.exec_string("return USER_D.get_a()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 1);
 
     let val: i32 = lua.exec_string("return USER_D.get_b()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 2);
 
     let _ = lua.exec_func2("hotfix", r"
@@ -223,11 +231,14 @@ fn hotfix_module() {
         ", "hotfix");
 
     let val: i32 = lua.exec_string("return USER_D.get_b()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 2);
 
     let val: i32 = lua.exec_string("return USER_D.get_a()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 1);
 
     let val: i32 = lua.exec_string("return USER_D.get_b()").unwrap();
+    assert_eq!(lua.get_top(), 0);
     assert_eq!(val, 3);
 }

@@ -176,6 +176,7 @@ pub fn read_userdata<'t, 'c, T>(lua: *mut td_clua::lua_State, index: i32) -> Opt
         match <String as LuaRead>::lua_read(lua) {
             Some(ref val) if val == &expected_typeid => {}
             _ => {
+                td_clua::lua_pop(lua, 2);
                 return None;
             }
         }

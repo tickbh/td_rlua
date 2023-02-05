@@ -18,8 +18,8 @@ macro_rules! integer_impl(
         }
 
         impl LuaRead for $t {
-            fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<$t> {
-                let mut success = unsafe { mem::uninitialized() };
+            fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<$t> {
+                let mut success = unsafe { mem::MaybeUninit::uninit().assume_init() };
                 let val = unsafe { td_clua::lua_tointegerx(lua, index, &mut success) };
                 match success {
                     0 => None,
@@ -50,8 +50,8 @@ macro_rules! numeric_impl(
         }
 
         impl LuaRead for $t {
-            fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<$t> {
-                let mut success = unsafe { mem::uninitialized() };
+            fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<$t> {
+                let mut success = unsafe { mem::MaybeUninit::uninit().assume_init() };
                 let val = unsafe { td_clua::lua_tonumberx(lua, index, &mut success) };
                 match success {
                     0 => None,
@@ -79,8 +79,8 @@ impl LuaPush for String {
 }
 
 impl LuaRead for String {
-    fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<String> {
-        let mut size: libc::size_t = unsafe { mem::uninitialized() };
+    fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<String> {
+        let mut size: libc::size_t = unsafe { mem::MaybeUninit::uninit().assume_init() };
         let c_str_raw = unsafe { td_clua::lua_tolstring(lua, index, &mut size) };
         if c_str_raw.is_null() {
             return None;
@@ -108,7 +108,7 @@ impl LuaPush for bool {
 }
 
 impl LuaRead for bool {
-    fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop: i32) -> Option<bool> {
+    fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<bool> {
         if unsafe { td_clua::lua_isboolean(lua, index) } != true {
             return None;
         }
@@ -125,7 +125,7 @@ impl LuaPush for () {
 }
 
 impl LuaRead for () {
-    fn lua_read_with_pop(_: *mut lua_State, _: i32, _pop: i32) -> Option<()> {
+    fn lua_read_with_pop_impl(_: *mut lua_State, _: i32, _pop: i32) -> Option<()> {
         Some(())
     }
 }

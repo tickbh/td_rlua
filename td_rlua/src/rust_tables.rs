@@ -14,7 +14,7 @@ fn push_iter<V, I>(lua: *mut lua_State, iterator: I) -> i32
     // creating empty table
     unsafe { td_clua::lua_newtable(lua) };
 
-    for (elem, index) in iterator.zip((1 ..)) {
+    for (elem, index) in iterator.zip(1..) {
         let size = elem.push_to_lua(lua);
 
         match size {
@@ -83,7 +83,7 @@ impl<K> LuaPush for HashSet<K> where K: LuaPush + Eq + Hash
 }
 
 impl<T> LuaRead for Vec<T> where T : LuaRead {
-    fn lua_read_with_pop(lua: *mut lua_State, index: i32, _pop : i32) -> Option<Vec<T>> {
+    fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop : i32) -> Option<Vec<T>> {
         let mut lua_table : LuaTable = unwrap_or!(LuaRead::lua_read_at_position(lua, index), return None);
         let mut result = vec![];
         let len = lua_table.table_len();
