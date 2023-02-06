@@ -87,7 +87,8 @@ macro_rules! impl_exec_func {
 
                 let success = td_clua::lua_pcall(state, index, 0, -1 * index - 2);
                 if success != 0 {
-                    td_clua::lua_pop(state, 1);
+                    let _guard = LuaGuard::new(state, 2);
+                    return success;
                 }
                 td_clua::lua_pop(state, 1);
                 success
@@ -115,10 +116,11 @@ macro_rules! impl_read_func {
 
                 let success = td_clua::lua_pcall(state, index, 1, -1 * index - 2);
                 if success != 0 {
-                    td_clua::lua_pop(state, 1);
+                    let _guard = LuaGuard::new(state, 2);
                     return None;
                 }
-                LuaRead::lua_read(state)
+                td_clua::lua_remove(state, -2);
+                LuaRead::lua_read_with_pop(state, -1, 1)
             }
         }
     )
@@ -254,10 +256,11 @@ impl Lua {
             td_clua::lua_insert(state, -top - 2);
             let success = td_clua::lua_pcall(state, top, 1, -top-2);
             if success != 0 {
-                td_clua::lua_pop(state, 1);
+                let _guard = LuaGuard::new(self.lua, 2);
                 return None;
             }
-            LuaRead::lua_read(state)
+            td_clua::lua_remove(state, -2);
+            LuaRead::lua_read_with_pop(state, -1, 1)
         }
     }
 

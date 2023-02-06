@@ -1,6 +1,7 @@
 extern crate td_rlua;
 extern crate libc;
 use td_rlua::Lua;
+use td_rlua::LuaPush;
 use td_rlua::LuaTable;
 
 #[test]
@@ -196,7 +197,9 @@ fn test_exec_func_by_param() {
 
     extern "C" fn test_rust(lua: *mut td_rlua::lua_State) -> libc::c_int {
         let mut lua_ob = Lua::from_existing_state(lua, false);
-        let _: Option<()> = lua_ob.exec_func("test2");
+        let val: Option<i32> = lua_ob.exec_func("test2");
+        assert_eq!(lua_ob.get_top(), 0);
+        val.unwrap().push_to_lua(lua);
         1
     }
     lua.register("testRust", test_rust);
