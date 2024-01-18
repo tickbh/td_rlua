@@ -1,12 +1,14 @@
 use std::ffi::{CStr, CString};
 use std::mem;
 
+use libc;
 use td_clua;
 use td_clua::lua_State;
-use libc;
 
-use LuaRead;
 use LuaPush;
+use LuaRead;
+
+pub struct RawString(pub Vec<u8>);
 
 macro_rules! integer_impl(
     ($t:ident) => (
@@ -80,7 +82,7 @@ impl LuaPush for String {
 
 impl LuaRead for String {
     fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<String> {
-        let mut size: libc::size_t = unsafe { mem::MaybeUninit::zeroed().assume_init()  };
+        let mut size: libc::size_t = unsafe { mem::MaybeUninit::zeroed().assume_init() };
         let c_str_raw = unsafe { td_clua::lua_tolstring(lua, index, &mut size) };
         if c_str_raw.is_null() {
             return None;
@@ -94,9 +96,14 @@ impl LuaRead for String {
 
 impl<'s> LuaPush for &'s str {
     fn push_to_lua(self, lua: *mut lua_State) -> i32 {
-        let value = CString::new(&self[..]).unwrap();
-        unsafe { td_clua::lua_pushstring(lua, value.as_ptr()) };
-        1
+        if let Some(value) = CString::new(&self[..]).ok() {
+            unsafe { td_clua::lua_pushstring(lua, value.as_ptr()) };
+            1
+        } else {
+            let value = CString::new(&"UNVAILED STRING"[..]).unwrap();
+            unsafe { td_clua::lua_pushstring(lua, value.as_ptr()) };
+            1
+        }
     }
 }
 
@@ -127,5 +134,33 @@ impl LuaPush for () {
 impl LuaRead for () {
     fn lua_read_with_pop_impl(_: *mut lua_State, _: i32, _pop: i32) -> Option<()> {
         Some(())
+    }
+}
+
+
+impl LuaPush for &RawString {
+    fn push_to_lua(self, lua: *mut lua_State) -> i32 {
+        unsafe { td_clua::lua_pushlstring(lua, self.0.as_ptr() as *const i8, self.0.len()) };
+        1
+    }
+}
+
+impl LuaPush for RawString {
+    fn push_to_lua(self, lua: *mut lua_State) -> i32 {
+        unsafe { td_clua::lua_pushlstring(lua, self.0.as_ptr() as *const i8, self.0.len()) };
+        1
+    }
+}
+
+impl LuaRead for RawString {
+    fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<RawString> {
+        let mut size: libc::size_t = unsafe { mem::MaybeUninit::zeroed().assume_init() };
+        let c_str_raw = unsafe { td_clua::lua_tolstring(lua, index, &mut size) };
+        if c_str_raw.is_null() {
+            return None;
+        }
+
+        let value = unsafe { Vec::from_raw_parts(c_str_raw as *mut u8, size, size) };
+        Some(RawString(value))
     }
 }
