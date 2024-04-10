@@ -1,13 +1,13 @@
 use std::any::{Any, TypeId};
+use std::boxed::Box;
 use std::ffi::CString;
+use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
-use std::marker::PhantomData;
-use std::boxed::Box;
 
+use libc;
 use td_clua;
 use td_clua::lua_State;
-use libc;
 use Lua;
 use LuaPush;
 use LuaRead;
@@ -24,11 +24,12 @@ extern "C" fn destructor_wrapper<T>(lua: *mut td_clua::lua_State) -> libc::c_int
 }
 
 extern "C" fn constructor_wrapper<T>(lua: *mut td_clua::lua_State) -> libc::c_int
-    where T: NewStruct + Any {
+where
+    T: NewStruct + Any,
+{
     let t = T::new();
-    let lua_data_raw = unsafe {
-        td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t)
-    };
+    let lua_data_raw =
+        unsafe { td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t) };
     unsafe {
         ptr::write(lua_data_raw as *mut _, t);
     }
@@ -43,8 +44,10 @@ extern "C" fn constructor_wrapper<T>(lua: *mut td_clua::lua_State) -> libc::c_in
 // constructor direct create light object,
 // in rust we alloc the memory, avoid copy the memory
 // in lua we get the object, we must free the memory
-extern "C" fn constructor_light_wrapper<T>(lua: *mut td_clua::lua_State) -> libc::c_int 
-    where T: NewStruct + Any {
+extern "C" fn constructor_light_wrapper<T>(lua: *mut td_clua::lua_State) -> libc::c_int
+where
+    T: NewStruct + Any,
+{
     let t = Box::into_raw(Box::new(T::new()));
     push_lightuserdata(unsafe { &mut *t }, lua, |_| {});
     let typeid = CString::new(T::name()).unwrap();
@@ -67,21 +70,17 @@ extern "C" fn constructor_light_wrapper<T>(lua: *mut td_clua::lua_State) -> libc
 ///
 ///  - `metatable`: Function that fills the metatable of the object.
 ///
-pub fn push_userdata<'a, T, F>(data: T,
-                               lua: *mut td_clua::lua_State,
-                               mut metatable: F)
-                               -> i32
-    where F: FnMut(LuaTable),
-          T: 'a + Any
+pub fn push_userdata<'a, T, F>(data: T, lua: *mut td_clua::lua_State, mut metatable: F) -> i32
+where
+    F: FnMut(LuaTable),
+    T: 'a + Any,
 {
     let typeid = format!("{:?}", TypeId::of::<T>());
-    let lua_data_raw = unsafe {
-        td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t)
-    };
+    let lua_data_raw =
+        unsafe { td_clua::lua_newuserdata(lua, mem::size_of::<T>() as libc::size_t) };
 
     // creating a metatable
     unsafe {
-        
         ptr::write(lua_data_raw as *mut _, data);
 
         td_clua::lua_newtable(lua);
@@ -111,7 +110,6 @@ pub fn push_userdata<'a, T, F>(data: T,
     1
 }
 
-
 /// Pushes an object as a user data.
 ///
 /// In Lua, a user data is anything that is not recognized by Lua. When the script attempts to
@@ -124,12 +122,14 @@ pub fn push_userdata<'a, T, F>(data: T,
 ///
 ///  - `metatable`: Function that fills the metatable of the object.
 ///
-pub fn push_lightuserdata<'a, T, F>(data: &'a mut T,
-                                    lua: *mut td_clua::lua_State,
-                                    mut metatable: F)
-                                    -> i32
-    where F: FnMut(LuaTable),
-          T: 'a + Any
+pub fn push_lightuserdata<'a, T, F>(
+    data: &'a mut T,
+    lua: *mut td_clua::lua_State,
+    mut metatable: F,
+) -> i32
+where
+    F: FnMut(LuaTable),
+    T: 'a + Any,
 {
     let typeid = format!("{:?}", TypeId::of::<T>());
     unsafe {
@@ -138,7 +138,6 @@ pub fn push_lightuserdata<'a, T, F>(data: &'a mut T,
 
     // creating a metatable
     unsafe {
-
         td_clua::lua_newtable(lua);
 
         // index "__typeid" corresponds to the hash of the TypeId of T
@@ -157,9 +156,10 @@ pub fn push_lightuserdata<'a, T, F>(data: &'a mut T,
     1
 }
 
-/// 
+///
 pub fn read_userdata<'t, 'c, T>(lua: *mut td_clua::lua_State, index: i32) -> Option<&'t mut T>
-    where T: 'static + Any
+where
+    T: 'static + Any,
 {
     unsafe {
         let expected_typeid = format!("{:?}", TypeId::of::<T>());
@@ -197,7 +197,8 @@ pub struct LuaStruct<T> {
 }
 
 impl<T> LuaStruct<T>
-    where T: NewStruct + Any
+where
+    T: NewStruct + Any,
 {
     pub fn new(lua: *mut lua_State) -> LuaStruct<T> {
         LuaStruct {
@@ -218,8 +219,7 @@ impl<T> LuaStruct<T>
     pub fn ensure_matetable(&mut self) {
         let name = T::name();
         let mut lua = Lua::from_existing_state(self.lua, false);
-
-        match lua.query::<LuaTable, _>(name.clone()) {
+        match lua.query::<LuaTable, _>(name) {
             Some(_) => {}
             None => unsafe {
                 td_clua::lua_newtable(self.lua);
@@ -233,7 +233,7 @@ impl<T> LuaStruct<T>
                 // index "__gc" call the object's destructor
                 if !self.light {
                     "__gc".push_to_lua(self.lua);
-                    
+
                     td_clua::lua_pushcfunction(self.lua, destructor_wrapper::<T>);
 
                     td_clua::lua_settable(self.lua, -3);
@@ -274,11 +274,12 @@ impl<T> LuaStruct<T>
     }
 
     pub fn def<P>(&mut self, name: &str, param: P) -> &mut LuaStruct<T>
-        where P: LuaPush
+    where
+        P: LuaPush,
     {
         let tname = T::name();
         let mut lua = Lua::from_existing_state(self.lua, false);
-        match lua.query::<LuaTable, _>(tname.clone()) {
+        match lua.query::<LuaTable, _>(tname) {
             Some(mut table) => {
                 match table.query::<LuaTable, _>("__index") {
                     Some(mut index) => {
@@ -295,14 +296,14 @@ impl<T> LuaStruct<T>
         self
     }
 
-
-    pub fn register(&mut self,
-                    name: &str,
-                    func: extern "C" fn(*mut td_clua::lua_State) -> libc::c_int)
-                    -> &mut LuaStruct<T> {
+    pub fn register(
+        &mut self,
+        name: &str,
+        func: extern "C" fn(*mut td_clua::lua_State) -> libc::c_int,
+    ) -> &mut LuaStruct<T> {
         let tname = T::name();
         let mut lua = Lua::from_existing_state(self.lua, false);
-        match lua.query::<LuaTable, _>(tname.clone()) {
+        match lua.query::<LuaTable, _>(tname) {
             Some(mut table) => {
                 match table.query::<LuaTable, _>("__index") {
                     Some(mut index) => {

@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::mem;
 
 use libc;
@@ -82,15 +82,13 @@ impl LuaPush for String {
 
 impl LuaRead for String {
     fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<String> {
-        let mut size: libc::size_t = unsafe { mem::MaybeUninit::zeroed().assume_init() };
-        let c_str_raw = unsafe { td_clua::lua_tolstring(lua, index, &mut size) };
-        if c_str_raw.is_null() {
-            return None;
+        let mut size = 0;
+        let data = unsafe { td_clua::lua_tolstring(lua, index, &mut size) };
+        let bytes = unsafe { std::slice::from_raw_parts(data as *const u8, size) };
+        match std::str::from_utf8(bytes) {
+            Ok(v) => Some(v.to_string()),
+            Err(_) => None,
         }
-
-        let c_str = unsafe { CStr::from_ptr(c_str_raw) };
-        let c_str = String::from_utf8_lossy(c_str.to_bytes());
-        Some(c_str.to_string())
     }
 }
 
@@ -137,7 +135,6 @@ impl LuaRead for () {
     }
 }
 
-
 impl LuaPush for &RawString {
     fn push_to_lua(self, lua: *mut lua_State) -> i32 {
         unsafe { td_clua::lua_pushlstring(lua, self.0.as_ptr() as *const i8, self.0.len()) };
@@ -154,7 +151,7 @@ impl LuaPush for RawString {
 
 impl LuaRead for RawString {
     fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<RawString> {
-        let mut size: libc::size_t = unsafe { mem::MaybeUninit::zeroed().assume_init() };
+        let mut size: libc::size_t = 0;
         let c_str_raw = unsafe { td_clua::lua_tolstring(lua, index, &mut size) };
         if c_str_raw.is_null() {
             return None;
