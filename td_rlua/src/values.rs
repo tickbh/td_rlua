@@ -1,5 +1,4 @@
 use std::ffi::CString;
-use std::mem;
 
 use libc;
 use td_clua;
@@ -21,7 +20,7 @@ macro_rules! integer_impl(
 
         impl LuaRead for $t {
             fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<$t> {
-                let mut success = unsafe { mem::MaybeUninit::zeroed().assume_init() };
+                let mut success = 0;
                 let val = unsafe { td_clua::lua_tointegerx(lua, index, &mut success) };
                 match success {
                     0 => None,
@@ -53,7 +52,7 @@ macro_rules! numeric_impl(
 
         impl LuaRead for $t {
             fn lua_read_with_pop_impl(lua: *mut lua_State, index: i32, _pop: i32) -> Option<$t> {
-                let mut success = unsafe { mem::MaybeUninit::zeroed().assume_init() };
+                let mut success = 0;
                 let val = unsafe { td_clua::lua_tonumberx(lua, index, &mut success) };
                 match success {
                     0 => None,
